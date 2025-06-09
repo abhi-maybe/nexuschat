@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Server
-    host: str = "0.0.0.0"
+    host: str = "0.0.0.0"  # bind to all interfaces
     port: int = 8080
     secret_key: str = "change...n"
     debug: bool = False

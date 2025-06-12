@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     port: int = 8080
     secret_key: str = "change...n"
     debug: bool = False
+    log_level: str = "info"
 
     # Database
     database_url: str = f"sqlite+aiosqlite:///{BASE_DIR / 'nexuschat.db'}"

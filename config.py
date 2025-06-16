@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
+    request_timeout: int = 120
 
     # Session
     session_lifetime_hours: int = 72

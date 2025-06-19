@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     request_timeout: int = 120
 
     # Session
-    session_lifetime_hours: int = 72
+    session_lifetime_hours: int = 168  # 1 week
 
     class Config:
         env_file = ".env"

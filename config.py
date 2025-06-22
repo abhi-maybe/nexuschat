@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     # Session
     session_lifetime_hours: int = 168  # 1 week
 
+    # noinspection PyMethodParameters
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

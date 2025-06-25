@@ -12,7 +12,7 @@ def main():
         port=settings.port,
         reload=settings.debug,
         factory=True,
-        log_level="info",
+        log_level=settings.log_level if hasattr(settings, 'log_level') else "info",
     )
 
 

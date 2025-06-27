@@ -16,5 +16,6 @@ def main():
     )
 
 
+# Entry point for NexusChat server
 if __name__ == "__main__":
     main()

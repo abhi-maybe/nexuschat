@@ -34,6 +34,8 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Application factory."""
     app = FastAPI(
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
         title="NexusChat",
         description="ChatGPT-like interface for local and cloud AI models",
         version="1.0.0",

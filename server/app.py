@@ -43,6 +43,7 @@ def create_app() -> FastAPI:
     )
 
     # Mount static files
+    # Serve CSS, JS, and images
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     # Templates

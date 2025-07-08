@@ -12,6 +12,7 @@ from server.routes.chat import router as chat_router
 from server.routes.models import router as models_router
 from server.routes.auth import router as auth_router
 from server.routes.settings import router as settings_router
+from server.routes.health import router as health_router
 from server.providers.registry import ProviderRegistry
 
 BASE_DIR = Path(__file__).resolve().parent.parent

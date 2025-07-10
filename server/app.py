@@ -59,6 +59,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
     app.include_router(models_router, prefix="/api/models", tags=["models"])
     app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
+    app.include_router(health_router, prefix="/api", tags=["health"])
 
     # Root route serves the SPA
     from fastapi.responses import FileResponse

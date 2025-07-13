@@ -14,6 +14,7 @@ from server.routes.auth import router as auth_router
 from server.routes.settings import router as settings_router
 from server.routes.health import router as health_router
 from server.providers.registry import ProviderRegistry
+from server.middleware.cors import setup_cors
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR / "templates"

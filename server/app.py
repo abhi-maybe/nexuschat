@@ -35,6 +35,8 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """Application factory."""
+    setup_cors(app)
+
     app = FastAPI(
         docs_url="/api/docs",
         redoc_url="/api/redoc",

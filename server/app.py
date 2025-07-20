@@ -51,6 +51,7 @@ def create_app() -> FastAPI:
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     # Templates
+    # Jinja2 template engine
     app.state.templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
     # Store references

@@ -3,6 +3,9 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from server.database.models import Base
 from config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:

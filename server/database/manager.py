@@ -16,6 +16,7 @@ class DatabaseManager:
         self.session_factory = None
 
     async def initialize(self):
+        """Set up engine and create tables."""
         """Create engine and tables."""
         db_url = settings.database_url
         if db_url.startswith("sqlite:///"):

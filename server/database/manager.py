@@ -25,6 +25,7 @@ class DatabaseManager:
         self.engine = create_async_engine(db_url, echo=settings.debug)
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
 
+        logger.info("Initializing database...")
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 

@@ -28,6 +28,7 @@ class DatabaseManager:
         logger.info("Initializing database...")
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database ready")
 
     async def close(self):
         if self.engine:

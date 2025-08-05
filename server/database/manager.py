@@ -35,4 +35,5 @@ class DatabaseManager:
             await self.engine.dispose()
 
     def get_session(self) -> AsyncSession:
+        """Create a new async session."""
         return self.session_factory()

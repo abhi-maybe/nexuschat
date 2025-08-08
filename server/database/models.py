@@ -12,6 +12,7 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
+    """User account model."""
     """User account."""
     __tablename__ = "users"
 

@@ -43,6 +43,7 @@ class UserSettings(Base):
 
 
 class Conversation(Base):
+    """Chat conversation model."""
     """A chat conversation."""
     __tablename__ = "conversations"
 

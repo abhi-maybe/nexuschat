@@ -61,6 +61,7 @@ class Conversation(Base):
 
 
 class Message(Base):
+    """Individual message in a conversation."""
     """A single message in a conversation."""
     __tablename__ = "messages"
 

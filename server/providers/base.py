@@ -39,6 +39,7 @@ class BaseProvider(ABC):
     @abstractmethod
     async def chat(
         self,
+        self,
         messages: list[ChatMessage],
         model: str,
         system_prompt: str = "",

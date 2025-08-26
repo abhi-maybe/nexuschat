@@ -6,6 +6,7 @@ from server.providers.base import BaseProvider, ChatMessage, ChatResponse, Model
 
 
 class OllamaProvider(BaseProvider):
+    """Ollama local inference provider."""
     name = "ollama"
     display_name = "Ollama (Local)"
 

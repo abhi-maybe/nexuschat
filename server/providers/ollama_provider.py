@@ -83,7 +83,7 @@ class OllamaProvider(BaseProvider):
         except Exception:
             return []
 
-    async def is_available(self):
+    async def is_available(self) -> bool:
         try:
             async with httpx.AsyncClient(timeout=5) as client:
                 resp = await client.get(f"{self.base_url}/api/tags")

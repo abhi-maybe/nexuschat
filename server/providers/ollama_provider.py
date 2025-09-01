@@ -80,7 +80,8 @@ class OllamaProvider(BaseProvider):
                     )
                     for m in data.get("models", [])
                 ]
-        except Exception:
+        except Exception as e:
+            logger.debug("Ollama unavailable: %s", e)
             return []
 
     async def is_available(self) -> bool:

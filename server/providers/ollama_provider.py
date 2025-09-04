@@ -1,6 +1,9 @@
 """Ollama local model provider."""
 
 import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 from typing import AsyncGenerator
 from server.providers.base import BaseProvider, ChatMessage, ChatResponse, ModelInfo
 

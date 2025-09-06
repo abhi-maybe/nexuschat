@@ -6,6 +6,7 @@ from server.providers.base import BaseProvider, ChatMessage, ChatResponse, Model
 
 
 class OpenAIProvider(BaseProvider):
+    """OpenAI API provider."""
     name = "openai"
     display_name = "OpenAI"
 

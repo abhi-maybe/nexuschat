@@ -11,6 +11,7 @@ class OpenAIProvider(BaseProvider):
     display_name = "OpenAI"
 
     BASE_URL = "https://api.openai.com/v1"
+    DEFAULT_TIMEOUT = 120
 
     def __init__(self, api_key: str = ""):
         self.api_key = api_key

@@ -37,7 +37,7 @@ class OpenAIProvider(BaseProvider):
         }
 
     async def chat(self, messages, model, system_prompt="", temperature=0.7, max_tokens=4096):
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=self.DEFAULT_TIMEOUT) as client:
             resp = await client.post(
                 f"{self.BASE_URL}/chat/completions",
                 headers=self._headers(),

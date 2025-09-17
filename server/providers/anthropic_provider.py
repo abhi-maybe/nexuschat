@@ -6,6 +6,7 @@ from server.providers.base import BaseProvider, ChatMessage, ChatResponse, Model
 
 
 class AnthropicProvider(BaseProvider):
+    """Anthropic Claude API provider."""
     name = "anthropic"
     display_name = "Anthropic (Claude)"
 

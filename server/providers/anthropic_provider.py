@@ -75,7 +75,7 @@ class AnthropicProvider(BaseProvider):
                         if chunk.get("type") == "content_block_delta":
                             yield chunk["delta"].get("text", "")
 
-    async def list_models(self):
+    async def list_models(self) -> list[ModelInfo]:
         return [
             ModelInfo(id="claude-sonnet-4-20250514", name="Claude Sonnet 4", provider=self.name, context_length=200000, supports_vision=True),
             ModelInfo(id="claude-3-5-haiku-20241022", name="Claude 3.5 Haiku", provider=self.name, context_length=200000, supports_vision=True),

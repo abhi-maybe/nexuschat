@@ -8,6 +8,7 @@ from server.providers.anthropic_provider import AnthropicProvider
 
 class ProviderRegistry:
     """Central registry for all AI providers."""
+    """Central registry for all AI providers."""
 
     def __init__(self):
         self._providers: dict[str, BaseProvider] = {}

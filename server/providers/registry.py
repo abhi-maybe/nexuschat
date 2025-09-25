@@ -20,6 +20,7 @@ class ProviderRegistry:
         self._providers["anthropic"] = AnthropicProvider()
 
     def get_provider(self, name: str) -> BaseProvider | None:
+        """Get a provider by name."""
         return self._providers.get(name)
 
     def get_all_providers(self) -> dict[str, BaseProvider]:

@@ -8,6 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.database.models import User, UserSettings
 from server.utils.helpers import hash_password, verify_password, create_token, decode_token
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

@@ -55,6 +55,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.username == req.username))
     user = result.scalar_one_or_none()
     if not user or not verify_password(req.password, user.password_hash):
+        logger.warning("Failed login attempt for user: %s", req.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token({"sub": str(user.id), "username": user.username})

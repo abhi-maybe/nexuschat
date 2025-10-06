@@ -58,6 +58,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
         logger.warning("Failed login attempt for user: %s", req.username)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    logger.info("User logged in: %s", user.username)
     token = create_token({"sub": str(user.id), "username": user.username})
     return {"token": token, "username": user.username, "user_id": user.id}
 

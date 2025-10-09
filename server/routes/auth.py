@@ -73,6 +73,10 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     if len(req.password) < 4:
         raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
 
+    if len(req.username) < 2:
+        raise HTTPException(status_code=400, detail="Username must be at least 2 characters")
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
+
     user = User(username=req.username, password_hash=hash_password(req.password))
     db.add(user)
     await db.flush()

@@ -66,7 +66,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
 @router.post("/register")
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     # Check existing
-    result = await db.execute(select(User).where(User.username == req.username))
+    result = await db.execute(select(User).where(User.username == req.username.lower()))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Username already taken")
 

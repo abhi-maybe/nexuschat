@@ -13,6 +13,9 @@ from server.routes.auth import get_db
 from server.database.models import User, UserSettings, Conversation, Message
 from server.providers.base import ChatMessage
 from server.utils.helpers import generate_title
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

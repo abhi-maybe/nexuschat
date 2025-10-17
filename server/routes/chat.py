@@ -89,6 +89,8 @@ async def send_message(
 
     provider = registry.get_provider(req.provider)
     if not provider:
+        logger.error("Unknown provider requested: %s", req.provider)
+    if not provider:
         raise HTTPException(status_code=400, detail=f"Unknown provider: {req.provider}")
 
     # Get/create conversation

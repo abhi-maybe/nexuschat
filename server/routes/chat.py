@@ -109,6 +109,7 @@ async def send_message(
     history = await _load_history(db, conv.id)
 
     # Get system prompt
+    # Priority: request > conversation > user settings > empty
     system = req.system_prompt or conv.system_prompt or (settings.system_prompt if settings else "")
 
     await db.commit()

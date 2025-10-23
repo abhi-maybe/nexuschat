@@ -88,6 +88,7 @@ async def send_message(
         registry.configure_provider("anthropic", api_key=settings.anthropic_api_key)
 
     provider = registry.get_provider(req.provider)
+    logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
     if not provider:
         logger.error("Unknown provider requested: %s", req.provider)
     if not provider:

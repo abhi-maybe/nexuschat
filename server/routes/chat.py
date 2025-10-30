@@ -268,4 +268,5 @@ async def delete_conversation(
 
     await db.delete(conv)
     await db.commit()
+    logger.info("Conversation %d deleted by user %d", conv_id, user.id)
     return {"status": "deleted"}

@@ -3,6 +3,9 @@
 from fastapi import APIRouter, Request, Depends
 from server.routes.auth import get_current_user, get_db
 from server.database.models import User, UserSettings
+import logging
+
+logger = logging.getLogger(__name__)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

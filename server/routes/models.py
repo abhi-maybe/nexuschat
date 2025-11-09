@@ -26,6 +26,7 @@ async def list_available_models(request: Request, user: User = Depends(get_curre
         registry.configure_provider("anthropic", api_key=settings.anthropic_api_key)
 
     models = await registry.get_available_models()
+    logger.info("Listed %d models for user %d", len(models), user.id)
     return {"models": models}
 
 

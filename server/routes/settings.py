@@ -57,7 +57,9 @@ async def update_settings(
         settings = UserSettings(user_id=user.id)
         db.add(settings)
 
-    for field, value in body.model_dump(exclude_none=True).items():
+    updates = body.model_dump(exclude_none=True)
+    logger.info("Settings updated for user %d: %s", user.id, list(updates.keys()))
+    for field, value in updates.items():
         setattr(settings, field, value)
 
     await db.commit()

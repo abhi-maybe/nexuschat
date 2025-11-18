@@ -6,6 +6,9 @@ from datetime import datetime, timezone, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 from config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

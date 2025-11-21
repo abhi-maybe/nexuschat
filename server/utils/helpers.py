@@ -23,7 +23,8 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def create_token(data: dict, expires_hours: int = 72) -> str:
+def create_token(data: dict, expires_hours: int = 168) -> str:
+    """Create a JWT token."""
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(hours=expires_hours)
     to_encode.update({"exp": expire})

@@ -32,6 +32,7 @@ def create_token(data: dict, expires_hours: int = 168) -> str:
 
 
 def decode_token(token: str) -> dict:
+    """Decode and validate a JWT token."""
     return jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
 
 

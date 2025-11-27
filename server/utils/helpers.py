@@ -37,6 +37,7 @@ def decode_token(token: str) -> dict:
 
 
 def generate_title(first_message: str) -> str:
+    """Generate a short title from the first message."""
     """Generate a conversation title from the first message."""
     clean = first_message.strip().replace("\n", " ")
     if len(clean) > 60:

@@ -16,6 +16,7 @@ ALGORITHM = "HS256"
 
 
 def hash_password(password: str) -> str:
+    """Hash a password using bcrypt."""
     return pwd_context.hash(password)
 
 

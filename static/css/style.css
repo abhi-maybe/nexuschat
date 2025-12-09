@@ -41,6 +41,7 @@
     --radius-md: 10px;
     --radius-lg: 16px;
     --radius-xl: 20px;
+    --max-chat-width: 768px;
 
     --sidebar-width: 260px;
     --top-bar-height: 52px;

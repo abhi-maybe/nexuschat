@@ -258,7 +258,7 @@ select { cursor: pointer; }
 
 .chat-messages {
     width: 100%;
-    max-width: 768px;
+    max-width: var(--max-chat-width);
     padding: 20px 16px;
 }
 

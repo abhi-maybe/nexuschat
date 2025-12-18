@@ -272,7 +272,7 @@ select { cursor: pointer; }
     text-align: center;
 }
 .welcome-icon { color: var(--accent); margin-bottom: 16px; opacity: 0.8; }
-.welcome-screen h2 { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+.welcome-screen h2 { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; font-weight: 600; margin-bottom: 8px; }
 .welcome-screen p { color: var(--text-secondary); font-size: 15px; margin-bottom: 32px; }
 
 .welcome-cards {

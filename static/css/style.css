@@ -307,6 +307,7 @@ select { cursor: pointer; }
     display: flex;
     gap: 12px;
     padding: 16px 0;
+    word-break: break-word;
     animation: fadeIn 0.2s ease;
 }
 .message + .message { border-top: 1px solid var(--border-primary); }

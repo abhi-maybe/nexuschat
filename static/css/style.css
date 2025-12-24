@@ -488,7 +488,7 @@ select { cursor: pointer; }
     flex-shrink: 0;
     transition: background var(--transition), color var(--transition);
 }
-.btn-send { background: var(--accent); color: var(--accent-text); }
+.btn-send { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); color: var(--accent-text); }
 .btn-send:hover:not(:disabled) { background: var(--accent-hover); }
 .btn-send:disabled { opacity: 0.3; cursor: not-allowed; }
 .btn-stop { background: var(--danger); color: #fff; }

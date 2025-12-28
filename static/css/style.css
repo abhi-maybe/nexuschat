@@ -165,6 +165,7 @@ select { cursor: pointer; }
     position: relative;
 }
 .conv-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.conv-item.active { background: var(--bg-active); color: var(--text-primary); border-left: 2px solid var(--accent); }
 .conv-item.active { background: var(--bg-active); color: var(--text-primary); }
 
 .conv-item .conv-title {

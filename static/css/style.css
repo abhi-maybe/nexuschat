@@ -413,8 +413,8 @@ select { cursor: pointer; }
     padding: 8px 0;
 }
 .typing-indicator span {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     background: var(--text-muted);
     border-radius: 50%;
     animation: blink 1.4s infinite both;

@@ -2,6 +2,7 @@
    NexusChat - Main Application
    ============================================ */
 
+/* API Client */
 const API = {
     token: localStorage.getItem('nexuschat_token'),
 

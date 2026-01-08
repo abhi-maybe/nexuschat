@@ -13,6 +13,7 @@ const API = {
         };
     },
 
+    /** GET request */
     async get(url) {
         const resp = await fetch(url, { headers: this.headers() });
         if (resp.status === 401) { this.logout(); return null; }

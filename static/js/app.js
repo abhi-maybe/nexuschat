@@ -62,6 +62,7 @@ const API = {
         window.location.href = '/login';
     },
 
+    /** Streaming POST request via SSE */
     async stream(url, body, onChunk, onDone, onError) {
         const controller = new AbortController();
         try {

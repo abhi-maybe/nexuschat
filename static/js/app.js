@@ -222,7 +222,7 @@ function setupEventListeners() {
     // Chat input
     els.chatInput.addEventListener('input', () => {
         autoResizeTextarea();
-        els.sendBtn.disabled = !els.chatInput.value.trim();
+        els.sendBtn.disabled = !els.chatInput.value.trim() || state.isStreaming;
     });
     els.chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {

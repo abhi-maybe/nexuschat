@@ -644,7 +644,7 @@ function autoResizeTextarea() {
 function scrollToBottom() {
     const container = $('#chat-container');
     requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight;
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     });
 }
 

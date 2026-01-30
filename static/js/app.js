@@ -409,6 +409,7 @@ function appendMessage(role, content, animate = true) {
     const avatar = role === 'user' ? 'U' : 'AI';
     const rendered = role === 'assistant' ? renderMarkdown(content) : `<p>${escapeHtml(content)}</p>`;
 
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     div.innerHTML = `
         <div class="message-avatar">${avatar}</div>
         <div class="message-content">

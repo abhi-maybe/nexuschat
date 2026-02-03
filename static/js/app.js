@@ -657,6 +657,8 @@ function escapeHtml(text) {
 }
 
 function showToast(message, type = 'success') {
+    // Remove existing toasts
+    document.querySelectorAll('.nexuschat-toast').forEach(t => t.remove());
     const toast = document.createElement('div');
     toast.style.cssText = `
         position: fixed; bottom: 20px; right: 20px; z-index: 9999;

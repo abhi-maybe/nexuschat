@@ -668,6 +668,7 @@ function showToast(message, type = 'success') {
         background: ${type === 'error' ? 'var(--danger)' : 'var(--success)'};
     `;
     toast.textContent = message;
+    toast.classList.add('nexuschat-toast');
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }

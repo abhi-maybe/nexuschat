@@ -476,6 +476,7 @@ async function sendMessage() {
     if (!text || state.isStreaming) return;
 
     // Hide welcome, show user message
+    // Remove welcome screen on first message
     const welcome = els.chatMessages.querySelector('.welcome-screen');
     if (welcome) welcome.remove();
 

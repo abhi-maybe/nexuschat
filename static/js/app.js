@@ -400,6 +400,7 @@ function renderMessages() {
     for (const msg of state.currentMessages) {
         appendMessage(msg.role, msg.content, false);
     }
+    if (state.currentMessages.length === 0) showWelcome();
     scrollToBottom();
 }
 

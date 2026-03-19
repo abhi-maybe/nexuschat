@@ -25,6 +25,8 @@
 
 ## Quick Start
 
+> **Requirements:** Python 3.11+, pip
+
 ### Prerequisites
 
 - Python 3.11+

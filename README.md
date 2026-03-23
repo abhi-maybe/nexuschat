@@ -179,3 +179,9 @@ Then register it in `server/providers/registry.py`.
 ## License
 
 MIT License — see [LICENSE](LICENSE)
+
+---
+
+<div align="center">
+Made with ❤️ by <a href="https://github.com/abhi-maybe">Abhi</a>
+</div> — see [LICENSE](LICENSE)

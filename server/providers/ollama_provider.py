@@ -34,6 +34,10 @@ class OllamaProvider(BaseProvider):
                 },
             )
             resp.raise_for_status()
+        except httpx.ConnectError:
+            raise ConnectionError("Cannot connect to Ollama. Is it running?")
+        except httpx.TimeoutException:
+            raise TimeoutError("Ollama request timed out")
             data = resp.json()
             return ChatResponse(
                 content=data["message"]["content"],

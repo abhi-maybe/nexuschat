@@ -44,6 +44,12 @@ class OpenAIProvider(BaseProvider):
                 json=self._build_payload(messages, model, system_prompt, temperature, max_tokens, False),
             )
             resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                raise ValueError("Invalid OpenAI API key")
+            if e.response.status_code == 429:
+                raise ValueError("OpenAI rate limit exceeded")
+            raise
             data = resp.json()
             choice = data["choices"][0]
             usage = data.get("usage", {})

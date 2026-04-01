@@ -40,6 +40,10 @@ class AnthropicProvider(BaseProvider):
                 json=payload,
             )
             resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                raise ValueError("Invalid Anthropic API key")
+            raise
             data = resp.json()
             return ChatResponse(
                 content=data["content"][0]["text"],

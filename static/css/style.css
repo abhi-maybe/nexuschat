@@ -648,7 +648,7 @@ select { cursor: pointer; }
 .form-error { color: var(--danger); font-size: 13px; margin-top: 8px; text-align: center; }
 
 /* ============ Scrollbar ============ */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-secondary); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

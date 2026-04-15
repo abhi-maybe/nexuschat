@@ -203,6 +203,12 @@ select { cursor: pointer; }
 }
 .btn-settings:hover { background: var(--bg-hover); color: var(--text-primary); }
 
+/* Print styles */
+@media print {
+    .sidebar, .top-bar, .input-area { display: none; }
+    .main-content { margin: 0; }
+}
+
 /* ============ Main Content ============ */
 .main-content {
     flex: 1;

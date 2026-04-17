@@ -562,6 +562,7 @@ async function loadModels() {
 
         state.models = data.models;
         const filtered = data.models.filter(m => m.provider === provider);
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
 
         els.modelSelect.innerHTML = '';
         if (filtered.length === 0) {

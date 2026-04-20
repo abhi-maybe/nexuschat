@@ -315,7 +315,7 @@ function renderConversations() {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const id = parseInt(btn.dataset.id);
-            if (confirm('Delete this conversation?')) {
+            if (confirm('Delete this conversation? This cannot be undone.')) {
                 await API.del(`/api/chat/conversations/${id}`);
                 if (state.currentConversationId === id) {
                     state.currentConversationId = null;

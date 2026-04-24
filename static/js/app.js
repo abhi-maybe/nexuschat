@@ -502,6 +502,7 @@ async function sendMessage() {
 
     state.abortController = await API.stream(
         '/api/chat/send',
+        '/api/chat/send',
         {
             conversation_id: state.currentConversationId,
             message: text,

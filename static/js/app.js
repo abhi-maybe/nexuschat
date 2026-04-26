@@ -519,7 +519,7 @@ async function sendMessage() {
             }
             updateStreamingMessage(fullContent);
         },
-        // onDone
+        // onDone - finalize streaming
         async (data) => {
             finalizeStreamingMessage(fullContent);
             state.currentMessages.push({ role: 'assistant', content: fullContent });

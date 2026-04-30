@@ -529,7 +529,7 @@ async function sendMessage() {
             finishStreaming();
             await loadConversations();
         },
-        // onError
+        // onError - handle stream failure
         (err) => {
             finalizeStreamingMessage(fullContent || `Error: ${err}`);
             finishStreaming();

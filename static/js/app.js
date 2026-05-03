@@ -646,6 +646,8 @@ function autoResizeTextarea() {
     const ta = els.chatInput;
     ta.style.height = 'auto';
     ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
+    // Prevent layout shift
+    ta.style.overflowY = ta.scrollHeight > 200 ? 'auto' : 'hidden';
 }
 
 function scrollToBottom() {

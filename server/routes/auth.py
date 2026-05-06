@@ -33,7 +33,7 @@ async def get_db(request: Request):
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
     """Extract user from Authorization header."""
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
+    if not auth or not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = decode_token(auth[7:])

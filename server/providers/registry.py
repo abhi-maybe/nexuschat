@@ -1,5 +1,9 @@
 """Provider registry - discovers and manages AI providers."""
 
+import asyncio
+import time
+import logging
+
 from server.providers.base import BaseProvider
 from server.providers.ollama_provider import OllamaProvider
 from server.providers.openai_provider import OpenAIProvider
@@ -9,12 +13,18 @@ from server.providers.xiaomi_provider import XiaomiProvider
 from server.providers.groq_provider import GroqProvider
 from server.providers.openrouter_provider import OpenRouterProvider
 
+logger = logging.getLogger(__name__)
+
+_MODELS_CACHE_TTL = 30  # seconds
+
 
 class ProviderRegistry:
     """Central registry for all AI providers."""
 
     def __init__(self):
         self._providers: dict[str, BaseProvider] = {}
+        self._models_cache: list[dict] | None = None
+        self._models_cache_ts: float = 0
 
     def discover_providers(self):
         """Register all known providers."""
@@ -55,24 +65,51 @@ class ProviderRegistry:
                 new_provider = provider_class(api_key=new_key)
                 self._providers[name] = new_provider
 
+    # ---- model listing (parallel + cached) ------------------------------
+
+    async def _fetch_provider_models(self, name: str, provider: BaseProvider) -> list[dict]:
+        """Fetch models from a single provider (called in parallel)."""
+        models = await provider.list_models()
+        return [
+            {
+                "id": m.id,
+                "name": m.name,
+                "provider": m.provider,
+                "provider_display": provider.display_name,
+                "context_length": m.context_length,
+                "supports_vision": m.supports_vision,
+            }
+            for m in models
+        ]
+
     async def get_available_models(self) -> list[dict]:
-        """Get models from all available providers."""
-        all_models = []
-        for name, provider in self._providers.items():
-            try:
-                models = await provider.list_models()
-                for m in models:
-                    all_models.append({
-                        "id": m.id,
-                        "name": m.name,
-                        "provider": m.provider,
-                        "provider_display": provider.display_name,
-                        "context_length": m.context_length,
-                        "supports_vision": m.supports_vision,
-                    })
-            except Exception:
-                continue
+        """Get models from all available providers in parallel."""
+        tasks = [
+            self._fetch_provider_models(name, provider)
+            for name, provider in self._providers.items()
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        all_models: list[dict] = []
+        for result in results:
+            if isinstance(result, list):
+                all_models.extend(result)
+            elif isinstance(result, Exception):
+                logger.debug("Provider model fetch failed: %s", result)
         return all_models
+
+    async def get_available_models_cached(self) -> list[dict]:
+        """Return cached models if fresh (< 30 s), otherwise re-fetch."""
+        now = time.monotonic()
+        if self._models_cache is not None and (now - self._models_cache_ts) < _MODELS_CACHE_TTL:
+            return self._models_cache
+
+        models = await self.get_available_models()
+        self._models_cache = models
+        self._models_cache_ts = now
+        return models
+
+    # ---- status ---------------------------------------------------------
 
     async def get_status(self) -> dict[str, bool]:
         """Check availability of all providers."""

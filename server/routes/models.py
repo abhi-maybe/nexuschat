@@ -33,7 +33,7 @@ async def list_available_models(request: Request, user: User = Depends(get_curre
     settings = result.scalar_one_or_none()
     _configure_providers(registry, settings)
 
-    models = await registry.get_available_models()
+    models = await registry.get_available_models_cached()
     logger.info("Listed %d models for user %d", len(models), user.id)
     return {"models": models}
 

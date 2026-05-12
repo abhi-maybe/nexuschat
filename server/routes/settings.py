@@ -59,8 +59,10 @@ async def update_settings(
 
     updates = body.model_dump(exclude_none=True)
     logger.info("Settings updated for user %d: %s", user.id, list(updates.keys()))
+    allowed_fields = {'openai_api_key', 'anthropic_api_key', 'ollama_base_url', 'default_provider', 'default_model', 'theme', 'system_prompt'}
     for field, value in updates.items():
-        setattr(settings, field, value)
+        if field in allowed_fields:
+            setattr(settings, field, value)
 
     await db.commit()
     return {"status": "updated"}

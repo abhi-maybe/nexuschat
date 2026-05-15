@@ -22,7 +22,11 @@ class DatabaseManager:
         if db_url.startswith("sqlite:///"):
             db_url = db_url.replace("sqlite:///", "sqlite+aiosqlite:///")
 
-        self.engine = create_async_engine(db_url, echo=settings.debug)
+        self.engine = create_async_engine(
+            db_url,
+            echo=settings.debug,
+            pool_pre_ping=True,
+        )
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
 
         logger.info("Initializing database...")

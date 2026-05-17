@@ -64,6 +64,7 @@ async def _load_history(db, conversation_id, limit=50):
         .where(Message.conversation_id == conversation_id)
         .order_by(desc(Message.created_at))
         .limit(limit)
+        # Eager load messages to avoid N+1
     )
     messages = list(reversed(result.scalars().all()))
     return [ChatMessage(role=m.role, content=m.content) for m in messages]

@@ -72,6 +72,7 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey("messages.id"), nullable=True)
     role = Column(String(16), nullable=False)  # user, assistant, system
     content = Column(Text, nullable=False)
     model = Column(String(64), default="")

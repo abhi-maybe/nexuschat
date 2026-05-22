@@ -352,6 +352,7 @@ function startNewChat() {
     state.currentConversationId = null;
     state.currentMessages = [];
     state.systemPrompt = '';
+    state.systemPrompt = '';
     showWelcome();
     renderConversations();
     els.chatInput.value = '';

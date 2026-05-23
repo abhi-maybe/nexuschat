@@ -597,9 +597,9 @@ async function loadSettings() {
         state.systemPrompt = data.system_prompt || '';
 
         // Theme
-        if (data.theme) {
-            document.documentElement.setAttribute('data-theme', data.theme);
-        }
+        // Apply saved theme
+        const theme = data.theme || localStorage.getItem('nexuschat_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
 
         // Set provider select
         els.providerSelect.value = data.default_provider || 'ollama';

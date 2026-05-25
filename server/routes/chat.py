@@ -1,6 +1,7 @@
 """Chat and conversation routes."""
 
 import json
+import httpx
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -30,6 +31,7 @@ class ChatRequest(BaseModel):
     temperature: float = 0.7
     max_tokens: int = 4096
     stream: bool = True
+    parent_id: int | None = None
 
 
 class ConversationUpdate(BaseModel):
@@ -104,7 +106,7 @@ async def send_message(
     logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
 
     # Save user message
-    user_msg = Message(conversation_id=conv.id, role="user", content=req.message, model=req.model)
+    user_msg = Message(conversation_id=conv.id, role="user", content=req.message, model=req.model, parent_id=req.parent_id)
     db.add(user_msg)
 
     # Update title if first message
@@ -134,6 +136,26 @@ async def send_message(
                     full_content += chunk
                     payload = json.dumps({"content": chunk, "conversation_id": conv.id})
                     yield f"data: {payload}\n\n"
+            except httpx.ConnectError:
+                logger.error("Connection error: provider=%s model=%s", req.provider, req.model)
+                err_payload = json.dumps({"error": f"Cannot connect to {req.provider} API"})
+                yield f"data: {err_payload}\n\n"
+                return
+            except httpx.ReadTimeout:
+                logger.error("Read timeout: provider=%s model=%s", req.provider, req.model)
+                err_payload = json.dumps({"error": f"{req.provider} API timed out"})
+                yield f"data: {err_payload}\n\n"
+                return
+            except httpx.HTTPStatusError as e:
+                logger.error("HTTP error: provider=%s model=%s status=%s", req.provider, req.model, e.response.status_code)
+                err_payload = json.dumps({"error": f"{req.provider} API error (HTTP {e.response.status_code})"})
+                yield f"data: {err_payload}\n\n"
+                return
+            except ValueError as e:
+                logger.warning("Stream config error: provider=%s model=%s error=%s", req.provider, req.model, e)
+                err_payload = json.dumps({"error": str(e)})
+                yield f"data: {err_payload}\n\n"
+                return
             except Exception as e:
                 logger.error("Stream error: provider=%s model=%s error=%s", req.provider, req.model, e)
                 err_payload = json.dumps({"error": str(e)})
@@ -153,6 +175,7 @@ async def send_message(
 
             done_payload = json.dumps({"done": True, "conversation_id": conv.id})
             yield f"data: {done_payload}\n\n"
+            yield "data: [DONE]\n\n"
 
         return StreamingResponse(stream_response(), media_type="text/event-stream")
     else:
@@ -177,6 +200,12 @@ async def send_message(
         except ValueError as e:
             logger.warning("Chat config error: provider=%s model=%s error=%s", req.provider, req.model, e)
             raise HTTPException(status_code=400, detail=str(e))
+        except httpx.ConnectError:
+            logger.error("Connection error: provider=%s model=%s", req.provider, req.model)
+            raise HTTPException(status_code=502, detail=f"Cannot connect to {req.provider} API")
+        except httpx.ReadTimeout:
+            logger.error("Read timeout: provider=%s model=%s", req.provider, req.model)
+            raise HTTPException(status_code=504, detail=f"{req.provider} API timed out")
         except Exception as e:
             logger.error("Chat error: provider=%s model=%s error=%s", req.provider, req.model, e)
             raise HTTPException(status_code=500, detail=str(e))
@@ -241,6 +270,7 @@ async def get_conversation(
                 "role": m.role,
                 "content": m.content,
                 "model": m.model,
+                "parent_id": m.parent_id,
                 "created_at": m.created_at.isoformat() if m.created_at else None,
             }
             for m in conv.messages

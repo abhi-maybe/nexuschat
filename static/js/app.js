@@ -227,6 +227,7 @@ function setupEventListeners() {
         els.sendBtn.disabled = !els.chatInput.value.trim() || state.isStreaming;
     });
     els.chatInput.addEventListener('keydown', (e) => {
+        // Send on Enter, newline on Shift+Enter
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();

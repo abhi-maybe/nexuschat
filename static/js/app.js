@@ -210,9 +210,11 @@ async function init() {
     try { await API.get('/api/auth/me'); } catch { API.logout(); return; }
 
     setupEventListeners();
-    await loadConversations();
-    await loadModels();
-    await loadSettings();
+    await Promise.all([
+        loadConversations(),
+        loadModels(),
+        loadSettings(),
+    ]);
     autoResizeTextarea();
 }
 

@@ -12,6 +12,8 @@
 
 ## Features
 
+- 🔒 **Secure** — JWT auth, bcrypt passwords, input sanitization
+
 - **Multi-Provider Support** — Ollama, OpenAI, Anthropic in one interface
 - **Real-time Streaming** — Token-by-token response streaming via SSE
 - **Conversation Management** — Persistent chat history with SQLite

@@ -76,4 +76,9 @@ def create_app() -> FastAPI:
     async def login_page():
         return FileResponse(str(TEMPLATES_DIR / "login.html"))
 
+
+    @app.get("/ping")
+    async def ping():
+        return {"pong": True}
+
     return app

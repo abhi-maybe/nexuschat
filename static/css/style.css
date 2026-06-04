@@ -25,6 +25,7 @@
 
     --accent: #6e56cf;
     --accent-glow: rgba(110, 86, 207, 0.3);
+    --success-glow: rgba(48, 164, 108, 0.3);
     --accent-hover: #7c66dc;
     --accent-muted: rgba(110, 86, 207, 0.15);
     --accent-text: #fff;

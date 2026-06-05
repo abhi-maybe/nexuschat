@@ -230,7 +230,7 @@ function setupEventListeners() {
     });
     els.chatInput.addEventListener('keydown', (e) => {
         // Send on Enter, newline on Shift+Enter
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
             e.preventDefault();
             sendMessage();
         }

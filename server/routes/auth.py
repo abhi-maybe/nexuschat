@@ -53,15 +53,21 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
 
 @router.post("/login")
 async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.username == req.username))
-    user = result.scalar_one_or_none()
-    if not user or not verify_password(req.password, user.password_hash):
-        logger.warning("Failed login attempt for user: %s", req.username)
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    try:
+        result = await db.execute(select(User).where(User.username == req.username))
+        user = result.scalar_one_or_none()
+        if not user or not verify_password(req.password, user.password_hash):
+            logger.warning("Failed login attempt for user: %s", req.username)
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    logger.info("User logged in: %s", user.username)
-    token = create_token({"sub": str(user.id), "username": user.username})
-    return {"token": token, "username": user.username, "user_id": user.id}
+        logger.info("User logged in: %s", user.username)
+        token = create_token({"sub": str(user.id), "username": user.username})
+        return {"token": token, "username": user.username, "user_id": user.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Login failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Login error: {e}")
 
 
 @router.post("/register")

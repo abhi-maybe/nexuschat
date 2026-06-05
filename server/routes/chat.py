@@ -92,6 +92,7 @@ async def send_message(
         registry.configure_provider("deepseek", api_key=settings.deepseek_api_key)
         registry.configure_provider("xiaomi", api_key=settings.xiaomi_api_key)
         registry.configure_provider("groq", api_key=settings.groq_api_key)
+        registry.configure_provider("openrouter", api_key=settings.openrouter_api_key)
 
     provider = registry.get_provider(req.provider)
     if not provider:
@@ -130,6 +131,7 @@ async def send_message(
                     payload = json.dumps({"content": chunk, "conversation_id": conv.id})
                     yield f"data: {payload}\n\n"
             except Exception as e:
+                logger.error("Stream error: provider=%s model=%s error=%s", req.provider, req.model, e)
                 err_payload = json.dumps({"error": str(e)})
                 yield f"data: {err_payload}\n\n"
                 return
@@ -150,23 +152,27 @@ async def send_message(
 
         return StreamingResponse(stream_response(), media_type="text/event-stream")
     else:
-        response = await provider.chat(history, req.model, system, req.temperature, req.max_tokens)
-        asst_msg = Message(
-            conversation_id=conv.id,
-            role="assistant",
-            content=response.content,
-            model=req.model,
-            tokens_used=response.tokens_used,
-        )
-        db.add(asst_msg)
-        await db.commit()
+        try:
+            response = await provider.chat(history, req.model, system, req.temperature, req.max_tokens)
+            asst_msg = Message(
+                conversation_id=conv.id,
+                role="assistant",
+                content=response.content,
+                model=req.model,
+                tokens_used=response.tokens_used,
+            )
+            db.add(asst_msg)
+            await db.commit()
 
-        return {
-            "content": response.content,
-            "model": response.model,
-            "tokens_used": response.tokens_used,
-            "conversation_id": conv.id,
-        }
+            return {
+                "content": response.content,
+                "model": response.model,
+                "tokens_used": response.tokens_used,
+                "conversation_id": conv.id,
+            }
+        except Exception as e:
+            logger.error("Chat error: provider=%s model=%s error=%s", req.provider, req.model, e)
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/conversations")

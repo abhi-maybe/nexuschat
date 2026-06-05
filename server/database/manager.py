@@ -1,6 +1,7 @@
 """Database connection and session management."""
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import text
 from server.database.models import Base
 from config import settings
 import logging
@@ -75,6 +76,7 @@ class DatabaseManager:
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await self._ensure_columns(conn)
 
     async def _init_sqlite(self, db_url: str):
         """Initialize SQLite engine."""
@@ -87,6 +89,23 @@ class DatabaseManager:
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+    async def _ensure_columns(self, conn):
+        """Add missing columns to existing tables (safe schema migration)."""
+        columns_to_ensure = [
+            ("user_settings", "openrouter_api_key", "VARCHAR(256) DEFAULT ''"),
+            ("user_settings", "xiaomi_api_key", "VARCHAR(256) DEFAULT ''"),
+            ("user_settings", "groq_api_key", "VARCHAR(256) DEFAULT ''"),
+            ("user_settings", "deepseek_api_key", "VARCHAR(256) DEFAULT ''"),
+        ]
+        for table, column, col_type in columns_to_ensure:
+            try:
+                await conn.execute(
+                    text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {col_type}")
+                )
+                logger.info("Ensured column %s.%s exists", table, column)
+            except Exception as e:
+                logger.debug("Column check %s.%s: %s", table, column, e)
 
     async def close(self):
         if self.engine:

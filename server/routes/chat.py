@@ -108,9 +108,13 @@ async def send_message(
     db.add(user_msg)
 
     # Update title if first message
-    msg_count = len(conv.messages) if conv.messages else 0
-    if msg_count == 0:
+    is_new = not req.conversation_id
+    if is_new:
         conv.title = generate_title(req.message)
+    else:
+        msg_count = len(conv.messages) if conv.messages else 0
+        if msg_count == 0:
+            conv.title = generate_title(req.message)
 
     # Load conversation history
     history = await _load_history(db, conv.id)
@@ -170,6 +174,9 @@ async def send_message(
                 "tokens_used": response.tokens_used,
                 "conversation_id": conv.id,
             }
+        except ValueError as e:
+            logger.warning("Chat config error: provider=%s model=%s error=%s", req.provider, req.model, e)
+            raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
             logger.error("Chat error: provider=%s model=%s error=%s", req.provider, req.model, e)
             raise HTTPException(status_code=500, detail=str(e))

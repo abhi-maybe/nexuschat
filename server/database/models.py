@@ -72,6 +72,7 @@ class Message(Base):
     model = Column(String(64), default="")
     tokens_used = Column(Integer, default=0)
     is_edited = Column(default=False)
+    token_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     conversation = relationship("Conversation", back_populates="messages")

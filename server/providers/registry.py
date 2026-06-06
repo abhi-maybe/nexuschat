@@ -7,6 +7,7 @@ from server.providers.anthropic_provider import AnthropicProvider
 from server.providers.deepseek_provider import DeepSeekProvider
 from server.providers.xiaomi_provider import XiaomiProvider
 from server.providers.groq_provider import GroqProvider
+from server.providers.openrouter_provider import OpenRouterProvider
 
 
 class ProviderRegistry:
@@ -23,6 +24,7 @@ class ProviderRegistry:
         self._providers["deepseek"] = DeepSeekProvider()
         self._providers["xiaomi"] = XiaomiProvider()
         self._providers["groq"] = GroqProvider()
+        self._providers["openrouter"] = OpenRouterProvider()
 
     def get_provider(self, name: str) -> BaseProvider | None:
         """Get a provider by name."""
@@ -46,7 +48,7 @@ class ProviderRegistry:
             if new_url != provider.base_url:
                 new_provider = OllamaProvider(base_url=new_url)
                 self._providers[name] = new_provider
-        elif name in ("openai", "anthropic", "deepseek", "xiaomi", "groq") and "api_key" in kwargs:
+        elif name in ("openai", "anthropic", "deepseek", "xiaomi", "groq", "openrouter") and "api_key" in kwargs:
             new_key = kwargs["api_key"]
             if new_key != provider.api_key:
                 provider_class = type(provider)

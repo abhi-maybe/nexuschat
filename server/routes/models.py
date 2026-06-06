@@ -21,6 +21,7 @@ def _configure_providers(registry, settings):
         registry.configure_provider("deepseek", api_key=settings.deepseek_api_key)
         registry.configure_provider("xiaomi", api_key=settings.xiaomi_api_key)
         registry.configure_provider("groq", api_key=settings.groq_api_key)
+        registry.configure_provider("openrouter", api_key=settings.openrouter_api_key)
 
 
 @router.get("/available")

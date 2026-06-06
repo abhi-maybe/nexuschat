@@ -805,11 +805,13 @@ async function loadSettings() {
         const deepseekKey = $('#setting-deepseek-key');
         const groqKey = $('#setting-groq-key');
         const xiaomiKey = $('#setting-xiaomi-key');
+        const openrouterKey = $('#setting-openrouter-key');
         if (openaiKey && data.openai_api_key) openaiKey.placeholder = 'sk-...••••••••';
         if (anthropicKey && data.anthropic_api_key) anthropicKey.placeholder = 'sk-ant-...••••••••';
         if (deepseekKey && data.deepseek_api_key) deepseekKey.placeholder = 'sk-...••••••••';
         if (groqKey && data.groq_api_key) groqKey.placeholder = 'gsk_...••••••••';
         if (xiaomiKey && data.xiaomi_api_key) xiaomiKey.placeholder = 'sk-...••••••••';
+        if (openrouterKey && data.openrouter_api_key) openrouterKey.placeholder = 'sk-or-...••••••••';
 
         state.systemPrompt = data.system_prompt || '';
 
@@ -839,6 +841,7 @@ async function saveSettingsHandler() {
             deepseek_api_key: $('#setting-deepseek-key')?.value || undefined,
             groq_api_key: $('#setting-groq-key')?.value || undefined,
             xiaomi_api_key: $('#setting-xiaomi-key')?.value || undefined,
+            openrouter_api_key: $('#setting-openrouter-key')?.value || undefined,
             default_provider: $('#setting-default-provider')?.value,
             default_model: els.modelSelect?.value,
             system_prompt: $('#setting-system-prompt')?.value,

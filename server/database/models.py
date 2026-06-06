@@ -37,6 +37,7 @@ class UserSettings(Base):
     deepseek_api_key = Column(String(256), default="")
     xiaomi_api_key = Column(String(256), default="")
     groq_api_key = Column(String(256), default="")
+    openrouter_api_key = Column(String(256), default="")
     ollama_base_url = Column(String(256), default="http://localhost:11434")
     default_provider = Column(String(32), default="ollama")
     default_model = Column(String(64), default="llama3.2")

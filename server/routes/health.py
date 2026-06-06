@@ -1,11 +1,16 @@
 """Health check routes."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 router = APIRouter()
 
 
 @router.get("/health")
-async def health_check():
+async def health_check(request: Request):
     """Return service health status."""
-    return {"status": "ok", "service": "nexuschat"}
+    db = request.app.state.db
+    return {
+        "status": "ok",
+        "service": "nexuschat",
+        "database": db.db_type,
+    }

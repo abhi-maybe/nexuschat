@@ -116,13 +116,11 @@ async def send_message(
                     history, req.model, system, req.temperature, req.max_tokens
                 ):
                     full_content += chunk
-                    yield f"data: {json.dumps({'content': chunk, 'conversation_id': conv.id})}
-
-"
+                    payload = json.dumps({"content": chunk, "conversation_id": conv.id})
+                    yield f"data: {payload}\n\n"
             except Exception as e:
-                yield f"data: {json.dumps({'error': str(e)})}
-
-"
+                err_payload = json.dumps({"error": str(e)})
+                yield f"data: {err_payload}\n\n"
                 return
 
             # Save assistant message
@@ -136,9 +134,8 @@ async def send_message(
                 save_db.add(asst_msg)
                 await save_db.commit()
 
-            yield f"data: {json.dumps({'done': True, 'conversation_id': conv.id})}
-
-"
+            done_payload = json.dumps({"done": True, "conversation_id": conv.id})
+            yield f"data: {done_payload}\n\n"
 
         return StreamingResponse(stream_response(), media_type="text/event-stream")
     else:

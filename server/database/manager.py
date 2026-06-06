@@ -74,8 +74,6 @@ class DatabaseManager:
         )
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
         async with self.engine.begin() as conn:
-            # One-time: drop and recreate to add openrouter_api_key column
-            await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
     async def _init_sqlite(self, db_url: str):

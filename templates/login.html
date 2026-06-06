@@ -8,6 +8,13 @@
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#6366f1">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.24/dist/full.min.css" rel="stylesheet" />
+    <script>
+        var _origWarn = console.warn;
+        console.warn = function() {
+            if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].includes('cdn.tailwindcss.com')) return;
+            _origWarn.apply(console, arguments);
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     (function() {

@@ -87,8 +87,13 @@ async def send_message(
     registry = request.app.state.providers
 
     # Load user settings
-    result = await db.execute(select(UserSettings).where(UserSettings.user_id == user.id))
-    settings = result.scalar_one_or_none()
+    try:
+        result = await db.execute(select(UserSettings).where(UserSettings.user_id == user.id))
+        settings = result.scalar_one_or_none()
+    except Exception as e:
+        logger.error("Failed to load user settings: %s", e)
+        settings = None
+
     if settings:
         registry.configure_provider("ollama", base_url=settings.ollama_base_url)
         registry.configure_provider("openai", api_key=settings.openai_api_key)
@@ -104,32 +109,38 @@ async def send_message(
         raise HTTPException(status_code=400, detail=f"Unknown provider: {req.provider}")
 
     # Get/create conversation
-    conv = await _get_or_create_conversation(db, user.id, req.conversation_id, req.provider, req.model, req.system_prompt)
-    logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
+    try:
+        conv = await _get_or_create_conversation(db, user.id, req.conversation_id, req.provider, req.model, req.system_prompt)
+        logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
 
-    # Save user message
-    user_msg = Message(conversation_id=conv.id, role="user", content=req.message, model=req.model, parent_id=req.parent_id)
-    db.add(user_msg)
+        # Save user message
+        user_msg = Message(conversation_id=conv.id, role="user", content=req.message, model=req.model, parent_id=req.parent_id)
+        db.add(user_msg)
 
-    # Update title if first message
-    is_new = not req.conversation_id
-    if is_new:
-        conv.title = generate_title(req.message)
-    else:
-        msg_count = len(conv.messages) if conv.messages else 0
-        if msg_count == 0:
+        # Update title if first message
+        is_new = not req.conversation_id
+        if is_new:
             conv.title = generate_title(req.message)
+        else:
+            msg_count = len(conv.messages) if conv.messages else 0
+            if msg_count == 0:
+                conv.title = generate_title(req.message)
 
-    # Flush so user message is visible to subsequent queries
-    await db.flush()
+        # Flush so user message is visible to subsequent queries
+        await db.flush()
 
-    # Load conversation history (now includes the just-added user message)
-    history = await _load_history(db, conv.id)
+        # Load conversation history (now includes the just-added user message)
+        history = await _load_history(db, conv.id)
 
-    # Get system prompt
-    system = req.system_prompt or conv.system_prompt or (settings.system_prompt if settings else "")
+        # Get system prompt
+        system = req.system_prompt or conv.system_prompt or (settings.system_prompt if settings else "")
 
-    await db.commit()
+        await db.commit()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Chat DB error: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     if req.stream:
         async def stream_response():

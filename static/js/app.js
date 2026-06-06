@@ -809,7 +809,7 @@ async function loadSettings() {
         if (anthropicKey && data.anthropic_api_key) anthropicKey.placeholder = 'sk-ant-...••••••••';
         if (deepseekKey && data.deepseek_api_key) deepseekKey.placeholder = 'sk-...••••••••';
         if (groqKey && data.groq_api_key) groqKey.placeholder = 'gsk_...••••••••';
-        if (xiaomiKey && data.xiaomi_api_key) xiaomiKey.placeholder = 'sk-or-...••••••••';
+        if (xiaomiKey && data.xiaomi_api_key) xiaomiKey.placeholder = 'sk-...••••••••';
 
         state.systemPrompt = data.system_prompt || '';
 

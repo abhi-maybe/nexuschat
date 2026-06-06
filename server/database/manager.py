@@ -12,12 +12,15 @@ logger = logging.getLogger(__name__)
 
 def _normalize_db_url(url: str) -> str:
     """Ensure the URL uses the correct async driver."""
-    # Supabase gives postgresql:// — convert to async driver
     if url.startswith("postgresql://") and "+" not in url.split("://")[0]:
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
     elif url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
     return url
+
+
+def _is_postgres(url: str) -> bool:
+    return "postgresql" in url or "postgres://" in url
 
 
 class DatabaseManager:
@@ -30,21 +33,30 @@ class DatabaseManager:
     async def initialize(self):
         """Set up engine and create tables."""
         db_url = _normalize_db_url(settings.database_url)
-        db_type = "PostgreSQL (Supabase)" if "asyncpg" in db_url else "SQLite"
+        is_pg = _is_postgres(db_url)
+        db_type = "PostgreSQL (Supabase)" if is_pg else "SQLite"
         logger.info("Connecting to %s", db_type)
 
         connect_args = {}
-        if "sqlite" in db_url:
+        if not is_pg:
             connect_args["check_same_thread"] = False
 
-        self.engine = create_async_engine(
-            db_url,
-            echo=settings.debug,
-            pool_pre_ping=True,
-            pool_size=5 if "asyncpg" in db_url else 0,
-            max_overflow=10 if "asyncpg" in db_url else 0,
-            connect_args=connect_args,
-        )
+        engine_kwargs = {
+            "echo": settings.debug,
+            "pool_pre_ping": True,
+            "connect_args": connect_args,
+        }
+
+        if is_pg:
+            # Supabase pooler settings — disable prepared statements
+            engine_kwargs["pool_size"] = 5
+            engine_kwargs["max_overflow"] = 10
+            engine_kwargs["connect_args"] = {
+                "ssl": "require",
+                "statement_cache_size": 0,  # Required for Supabase pooler (PgBouncer)
+            }
+
+        self.engine = create_async_engine(db_url, **engine_kwargs)
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
 
         logger.info("Initializing database tables...")

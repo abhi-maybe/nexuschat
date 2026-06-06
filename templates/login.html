@@ -11,6 +11,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+    // Apply theme + background from localStorage before paint
+    (function() {
+        var theme = localStorage.getItem('nexuschat_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        var bg = localStorage.getItem('nexuschat_bg') || 'none';
+        if (bg && bg !== 'none') {
+            document.documentElement.setAttribute('data-bg', bg);
+            if (bg === 'custom') {
+                var url = localStorage.getItem('nexuschat_bg_custom_url') || '';
+                var opacity = parseInt(localStorage.getItem('nexuschat_bg_custom_opacity') || '15', 10);
+                if (url) document.documentElement.style.setProperty('--custom-bg-url', 'url("' + url + '")');
+                document.documentElement.style.setProperty('--custom-bg-opacity', opacity / 100);
+            }
+        }
+    })();
+    </script>
 </head>
 <body class="login-body">
     <div class="login-container">

@@ -291,6 +291,8 @@ async function init() {
     setupEventListeners();
     Keyboard.init();
     applyTheme();
+    initBackground();
+    setupBgGridListeners();
 
     await Promise.all([loadConversations(), loadModels(), loadSettings()]);
 
@@ -852,6 +854,18 @@ async function saveSettingsHandler() {
         localStorage.setItem('nexuschat_theme', newTheme);
         updateThemeIcon(newTheme);
 
+        // Save background preference
+        const activeBg = document.querySelector('#bg-grid .bg-option.active');
+        const bgValue = activeBg?.dataset.value || 'none';
+        localStorage.setItem('nexuschat_bg', bgValue);
+
+        if (bgValue === 'custom') {
+            const customUrl = $('#setting-custom-bg-url')?.value || '';
+            const customOpacity = parseInt($('#setting-custom-bg-opacity')?.value || '15', 10);
+            localStorage.setItem('nexuschat_bg_custom_url', customUrl);
+            localStorage.setItem('nexuschat_bg_custom_opacity', customOpacity.toString());
+        }
+
         // Update provider
         if (els.providerSelect) {
             els.providerSelect.value = payload.default_provider;
@@ -864,6 +878,109 @@ async function saveSettingsHandler() {
         showToast('Settings saved');
     } catch (err) {
         showToast('Failed to save settings: ' + err.message, 'error');
+    }
+}
+
+
+/* ============ Background Preset ============ */
+function applyBackground(bgName) {
+    if (!bgName || bgName === 'none') {
+        document.documentElement.removeAttribute('data-bg');
+    } else {
+        document.documentElement.setAttribute('data-bg', bgName);
+    }
+}
+
+function applyCustomBgVars(url, opacity) {
+    if (url) {
+        document.documentElement.style.setProperty('--custom-bg-url', `url("${url}")`);
+    }
+    document.documentElement.style.setProperty('--custom-bg-opacity', (opacity || 15) / 100);
+}
+
+function initBackground() {
+    const saved = localStorage.getItem('nexuschat_bg') || 'none';
+    const customUrl = localStorage.getItem('nexuschat_bg_custom_url') || '';
+    const customOpacity = parseInt(localStorage.getItem('nexuschat_bg_custom_opacity') || '15', 10);
+
+    applyBackground(saved);
+
+    if (saved === 'custom' && customUrl) {
+        applyCustomBgVars(customUrl, customOpacity);
+    }
+
+    // Update grid selection
+    const grid = document.getElementById('bg-grid');
+    if (grid) {
+        grid.querySelectorAll('.bg-option').forEach(opt => {
+            opt.classList.toggle('active', opt.dataset.value === saved);
+        });
+    }
+
+    // Show/hide custom fields
+    const customFields = document.getElementById('custom-bg-fields');
+    if (customFields) {
+        customFields.classList.toggle('visible', saved === 'custom');
+    }
+
+    // Populate custom URL input
+    const urlInput = document.getElementById('setting-custom-bg-url');
+    if (urlInput) urlInput.value = customUrl;
+
+    // Populate opacity slider
+    const opacitySlider = document.getElementById('setting-custom-bg-opacity');
+    const opacityVal = document.getElementById('custom-bg-opacity-value');
+    if (opacitySlider) opacitySlider.value = customOpacity;
+    if (opacityVal) opacityVal.textContent = customOpacity + '%';
+}
+
+function setupBgGridListeners() {
+    const grid = document.getElementById('bg-grid');
+    if (!grid) return;
+
+    grid.addEventListener('click', (e) => {
+        const option = e.target.closest('.bg-option');
+        if (!option) return;
+
+        grid.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
+        option.classList.add('active');
+
+        const value = option.dataset.value;
+        applyBackground(value);
+
+        // Show/hide custom fields
+        const customFields = document.getElementById('custom-bg-fields');
+        if (customFields) {
+            customFields.classList.toggle('visible', value === 'custom');
+        }
+
+        // Live preview for custom
+        if (value === 'custom') {
+            const url = document.getElementById('setting-custom-bg-url')?.value;
+            const opacity = parseInt(document.getElementById('setting-custom-bg-opacity')?.value || '15', 10);
+            if (url) applyCustomBgVars(url, opacity);
+        }
+    });
+
+    // Custom URL live preview
+    const urlInput = document.getElementById('setting-custom-bg-url');
+    if (urlInput) {
+        urlInput.addEventListener('input', () => {
+            const opacity = parseInt(document.getElementById('setting-custom-bg-opacity')?.value || '15', 10);
+            applyCustomBgVars(urlInput.value, opacity);
+        });
+    }
+
+    // Opacity slider
+    const opacitySlider = document.getElementById('setting-custom-bg-opacity');
+    const opacityVal = document.getElementById('custom-bg-opacity-value');
+    if (opacitySlider) {
+        opacitySlider.addEventListener('input', () => {
+            const v = opacitySlider.value;
+            if (opacityVal) opacityVal.textContent = v + '%';
+            const url = document.getElementById('setting-custom-bg-url')?.value;
+            if (url) applyCustomBgVars(url, parseInt(v, 10));
+        });
     }
 }
 

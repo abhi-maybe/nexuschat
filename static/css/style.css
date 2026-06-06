@@ -1310,3 +1310,319 @@ select {
         display: block;
     }
 }
+
+/* ============ Background Presets ============ */
+/* Layered atmospheric backgrounds inspired by Hermes Agent */
+
+/* Base pseudo-element for all presets — applied to body/login-body */
+[data-bg]:not([data-bg="none"]) body::before,
+[data-bg]:not([data-bg="none"]) .login-body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Preset: Ambient Glow — warm radial gradient from corners */
+[data-bg="ambient-glow"] body::before,
+[data-bg="ambient-glow"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 0% 100%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 70%);
+}
+
+[data-theme="light"][data-bg="ambient-glow"] body::before,
+[data-theme="light"][data-bg="ambient-glow"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 0% 100%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 0%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+}
+
+/* Preset: Aurora — animated northern lights */
+[data-bg="aurora"] body::before,
+[data-bg="aurora"] .login-body::before {
+    background: linear-gradient(135deg,
+        rgba(16, 185, 129, 0.08) 0%,
+        rgba(59, 130, 246, 0.06) 25%,
+        rgba(139, 92, 246, 0.08) 50%,
+        rgba(236, 72, 153, 0.06) 75%,
+        rgba(16, 185, 129, 0.04) 100%);
+    background-size: 200% 200%;
+    animation: aurora-shift 12s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-shift {
+    0%   { background-position: 0% 50%; filter: hue-rotate(0deg); }
+    50%  { filter: hue-rotate(15deg); }
+    100% { background-position: 100% 50%; filter: hue-rotate(-10deg); }
+}
+
+[data-theme="light"][data-bg="aurora"] body::before,
+[data-theme="light"][data-bg="aurora"] .login-body::before {
+    background: linear-gradient(135deg,
+        rgba(16, 185, 129, 0.04) 0%,
+        rgba(59, 130, 246, 0.03) 25%,
+        rgba(139, 92, 246, 0.04) 50%,
+        rgba(236, 72, 153, 0.03) 75%,
+        rgba(16, 185, 129, 0.02) 100%);
+    background-size: 200% 200%;
+}
+
+/* Preset: Deep Space — subtle starfield with dark gradient */
+[data-bg="deep-space"] body::before,
+[data-bg="deep-space"] .login-body::before {
+    background:
+        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.15), transparent),
+        radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.1), transparent),
+        radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.12), transparent),
+        radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.08), transparent),
+        radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.1), transparent),
+        radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.12), transparent),
+        radial-gradient(1px 1px at 30% 90%, rgba(255,255,255,0.1), transparent),
+        radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.08), transparent),
+        radial-gradient(ellipse at 50% 0%, rgba(15, 23, 42, 0.6) 0%, transparent 70%),
+        linear-gradient(180deg, #050510 0%, #0a0a0a 100%);
+    background-size: 200px 200px, 300px 300px, 250px 250px, 350px 350px, 180px 180px,
+                     400px 400px, 280px 280px, 320px 320px, 100% 100%, 100% 100%;
+}
+
+[data-theme="light"][data-bg="deep-space"] body::before,
+[data-theme="light"][data-bg="deep-space"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.04) 0%, transparent 70%),
+        linear-gradient(180deg, #f0f4ff 0%, #fafafa 100%);
+}
+
+/* Preset: Warm Ember — Hermes Agent inspired warm amber tones */
+[data-bg="warm-ember"] body::before,
+[data-bg="warm-ember"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 0% 100%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 0%, rgba(239, 68, 68, 0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.03) 0%, transparent 60%),
+        linear-gradient(180deg, #0a0804 0%, #0a0a0a 50%, #080604 100%);
+}
+
+[data-theme="light"][data-bg="warm-ember"] body::before,
+[data-theme="light"][data-bg="warm-ember"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 0% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 0%, rgba(239, 68, 68, 0.03) 0%, transparent 40%);
+}
+
+/* Preset: Nebula — cosmic purple/blue gradient */
+[data-bg="nebula"] body::before,
+[data-bg="nebula"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+        radial-gradient(ellipse at 60% 80%, rgba(236, 72, 153, 0.06) 0%, transparent 50%),
+        linear-gradient(135deg, #06040f 0%, #0a0a0a 50%, #0a0612 100%);
+}
+
+[data-theme="light"][data-bg="nebula"] body::before,
+[data-theme="light"][data-bg="nebula"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 40%);
+}
+
+/* Preset: Matrix — subtle digital green tint with scanlines */
+[data-bg="matrix"] body::before,
+[data-bg="matrix"] .login-body::before {
+    background:
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(16, 185, 129, 0.015) 2px, rgba(16, 185, 129, 0.015) 4px),
+        radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+        linear-gradient(180deg, #040a04 0%, #0a0a0a 100%);
+}
+
+[data-theme="light"][data-bg="matrix"] body::before,
+[data-theme="light"][data-bg="matrix"] .login-body::before {
+    background:
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(16, 185, 129, 0.008) 2px, rgba(16, 185, 129, 0.008) 4px),
+        radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.03) 0%, transparent 60%);
+}
+
+/* Preset: Ocean — deep blue gradient */
+[data-bg="ocean"] body::before,
+[data-bg="ocean"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 30% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+        linear-gradient(180deg, #040810 0%, #0a0a0a 50%, #040812 100%);
+}
+
+[data-theme="light"][data-bg="ocean"] body::before,
+[data-theme="light"][data-bg="ocean"] .login-body::before {
+    background:
+        radial-gradient(ellipse at 30% 100%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 0%, rgba(59, 130, 246, 0.04) 0%, transparent 40%);
+}
+
+/* Preset: Custom URL */
+[data-bg="custom"] body::before,
+[data-bg="custom"] .login-body::before {
+    background: var(--custom-bg-url) center / cover no-repeat;
+    opacity: var(--custom-bg-opacity, 0.15);
+    filter: var(--custom-bg-filter, blur(0px));
+}
+
+/* Noise overlay for all presets — subtle grain texture (Hermes Agent style) */
+[data-bg]:not([data-bg="none"]) body::after,
+[data-bg]:not([data-bg="none"]) .login-body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.02;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+}
+
+/* ============ Background Selector UI ============ */
+.bg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.bg-option {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-primary);
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color var(--transition), transform var(--transition-fast);
+    background: var(--bg-secondary);
+}
+
+.bg-option:hover {
+    border-color: var(--border-secondary);
+    transform: scale(1.03);
+}
+
+.bg-option.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.bg-option-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Thumbnail previews */
+.bg-option[data-value="none"] .bg-option-preview {
+    background: var(--bg-primary);
+}
+
+.bg-option[data-value="ambient-glow"] .bg-option-preview {
+    background:
+        radial-gradient(ellipse at 0% 100%, rgba(59, 130, 246, 0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 100% 0%, rgba(139, 92, 246, 0.2) 0%, transparent 60%),
+        var(--bg-primary);
+}
+
+.bg-option[data-value="aurora"] .bg-option-preview {
+    background: linear-gradient(135deg,
+        rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.15),
+        rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.15)),
+        var(--bg-primary);
+}
+
+.bg-option[data-value="deep-space"] .bg-option-preview {
+    background:
+        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1px 1px at 60% 60%, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.35), transparent),
+        linear-gradient(180deg, #050510, #0a0a0a);
+}
+
+.bg-option[data-value="warm-ember"] .bg-option-preview {
+    background:
+        radial-gradient(ellipse at 0% 100%, rgba(245, 158, 11, 0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 100% 0%, rgba(239, 68, 68, 0.15) 0%, transparent 50%),
+        var(--bg-primary);
+}
+
+.bg-option[data-value="nebula"] .bg-option-preview {
+    background:
+        radial-gradient(ellipse at 30% 50%, rgba(139, 92, 246, 0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 30%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+        var(--bg-primary);
+}
+
+.bg-option[data-value="matrix"] .bg-option-preview {
+    background:
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(16, 185, 129, 0.1) 2px, rgba(16, 185, 129, 0.1) 4px),
+        radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.2) 0%, transparent 60%),
+        var(--bg-primary);
+}
+
+.bg-option[data-value="ocean"] .bg-option-preview {
+    background:
+        radial-gradient(ellipse at 30% 100%, rgba(6, 182, 212, 0.25) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+        var(--bg-primary);
+}
+
+.bg-option[data-value="custom"] .bg-option-preview {
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-secondary);
+    border-radius: 4px;
+}
+
+/* Custom URL input */
+.custom-bg-fields {
+    display: none;
+    margin-top: 10px;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.custom-bg-fields.visible {
+    display: flex;
+}
+
+.custom-bg-fields input[type="text"] {
+    width: 100%;
+}
+
+.custom-bg-opacity-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.custom-bg-opacity-row label {
+    font-size: 12px;
+    white-space: nowrap;
+    min-width: 56px;
+}
+
+.custom-bg-opacity-row input[type="range"] {
+    flex: 1;
+}
+
+.custom-bg-opacity-row .slider-value {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    min-width: 36px;
+    text-align: right;
+}

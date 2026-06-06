@@ -178,6 +178,10 @@ class MyProvider(BaseProvider):
 
 Then register it in `server/providers/registry.py`.
 
+## Star History
+
+If you find NexusChat useful, consider giving it a ⭐
+
 ## License
 
 MIT License — see [LICENSE](LICENSE)

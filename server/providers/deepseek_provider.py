@@ -46,6 +46,8 @@ class DeepSeekProvider(BaseProvider):
         }
 
     async def chat(self, messages, model, system_prompt="", temperature=0.7, max_tokens=4096):
+        if not self.api_key:
+            raise ValueError("DeepSeek API key not configured. Add one in Settings → Providers → DeepSeek.")
         try:
             async with httpx.AsyncClient(timeout=self.DEFAULT_TIMEOUT) as client:
                 resp = await client.post(
@@ -72,6 +74,8 @@ class DeepSeekProvider(BaseProvider):
         )
 
     async def chat_stream(self, messages, model, system_prompt="", temperature=0.7, max_tokens=4096):
+        if not self.api_key:
+            raise ValueError("DeepSeek API key not configured. Add one in Settings → Providers → DeepSeek.")
         async with httpx.AsyncClient(timeout=120) as client:
             async with client.stream(
                 "POST",
@@ -88,8 +92,6 @@ class DeepSeekProvider(BaseProvider):
                             yield delta["content"]
 
     async def list_models(self):
-        if not self.api_key:
-            return []
         return list(self.AVAILABLE_MODELS)
 
     async def is_available(self):

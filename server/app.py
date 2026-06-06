@@ -78,6 +78,11 @@ def create_app() -> FastAPI:
 
 
     @app.get("/ping")
+    @app.get("/version")
+    async def version():
+        return {"version": "1.0.0", "name": "NexusChat"}
+
+    @app.get("/ping")
     async def ping():
         return {"pong": True}
 

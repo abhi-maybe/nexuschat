@@ -18,9 +18,8 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "info"
 
-    # Database — use /tmp on Vercel (ephemeral but writable)
-    _db_path = "/tmp/nexuschat.db" if os.environ.get("VERCEL") else str(BASE_DIR / "nexuschat.db")
-    database_url: str = f"sqlite+aiosqlite:///{_db_path}"
+    # Database — PostgreSQL on Vercel (Supabase), SQLite locally
+    database_url: str = os.environ.get("DATABASE_URL", "")
 
     # Provider defaults
     default_provider: str = "ollama"
@@ -46,3 +45,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Resolve database URL: env var wins, else SQLite for local dev
+if not settings.database_url:
+    _db_path = "/tmp/nexuschat.db" if os.environ.get("VERCEL") else str(BASE_DIR / "nexuschat.db")
+    settings.database_url = f"sqlite+aiosqlite:///{_db_path}"

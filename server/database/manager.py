@@ -97,6 +97,7 @@ class DatabaseManager:
             ("user_settings", "xiaomi_api_key", "VARCHAR(256) DEFAULT ''"),
             ("user_settings", "groq_api_key", "VARCHAR(256) DEFAULT ''"),
             ("user_settings", "deepseek_api_key", "VARCHAR(256) DEFAULT ''"),
+            ("messages", "parent_id", "INTEGER"),
         ]
         for table, column, col_type in columns_to_ensure:
             try:

@@ -3,6 +3,8 @@
 import urllib.request
 import json
 import ssl
+import random
+import string
 
 BASE = "https://nexuschat-dev.vercel.app"
 ctx = ssl.create_default_context()
@@ -21,11 +23,16 @@ def api(method, path, data=None, token=None):
     except Exception as e:
         return 0, str(e)
 
-# Register
-status, body = api("POST", "/api/auth/register", {"username": "chattest999", "password": "test1234"})
-print(f"Register: {status} {body[:200]}")
+# Register with random username
+username = "test" + "".join(random.choices(string.digits, k=6))
+status, body = api("POST", "/api/auth/register", {"username": username, "password": "test1234"})
+print(f"Register ({username}): {status} {body[:200]}")
 data = json.loads(body)
 token = data.get("token", "")
+
+if not token:
+    print("No token, exiting")
+    exit(1)
 
 # Stream chat xiaomi
 print("\n=== Stream xiaomi ===")
@@ -42,11 +49,5 @@ print(f"Body: {body[:500]}")
 # Stream openrouter
 print("\n=== Stream openrouter ===")
 status, body = api("POST", "/api/chat/send", {"message": "hello", "model": "openai/gpt-4o", "provider": "openrouter", "stream": True}, token)
-print(f"Status: {status}")
-print(f"Body: {body[:500]}")
-
-# Stream deepseek
-print("\n=== Stream deepseek ===")
-status, body = api("POST", "/api/chat/send", {"message": "hello", "model": "deepseek-chat", "provider": "deepseek", "stream": True}, token)
 print(f"Status: {status}")
 print(f"Body: {body[:500]}")

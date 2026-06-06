@@ -74,8 +74,6 @@ class DatabaseManager:
         )
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
         async with self.engine.begin() as conn:
-            # Drop and recreate to fix timezone schema issue (one-time)
-            await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
     async def _init_sqlite(self, db_url: str):

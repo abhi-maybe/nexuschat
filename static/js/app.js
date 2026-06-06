@@ -744,11 +744,12 @@ async function loadModels() {
         const data = await API.get('/api/models/available');
         if (!data) return;
 
-        state.providers = data.providers || [];
+        // API returns flat list — group by provider
+        const allModels = data.models || [];
+        state.allModels = allModels;
 
-        // Find the selected provider's models
-        const providerData = state.providers.find((p) => p.name === provider);
-        const models = providerData ? providerData.models : [];
+        // Filter models for selected provider
+        const models = allModels.filter(m => m.provider === provider);
 
         els.modelSelect.innerHTML = '';
         if (models.length === 0) {

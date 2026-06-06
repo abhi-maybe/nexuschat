@@ -17,8 +17,12 @@ class XiaomiProvider(BaseProvider):
     DEFAULT_TIMEOUT = 120
 
     AVAILABLE_MODELS = [
-        ModelInfo(id="MiMo-7B-RL", name="MiMo 7B RL", provider="xiaomi", context_length=131072),
-        ModelInfo(id="MiMo-7B-SFT", name="MiMo 7B SFT", provider="xiaomi", context_length=131072),
+        ModelInfo(id="mimo-v2.5-pro", name="MiMo V2.5 Pro (Flagship)", provider="xiaomi", context_length=1048576),
+        ModelInfo(id="mimo-v2.5", name="MiMo V2.5 (Omnimodal)", provider="xiaomi", context_length=1048576),
+        ModelInfo(id="mimo-v2-flash", name="MiMo V2 Flash (Fast)", provider="xiaomi", context_length=262144),
+        ModelInfo(id="mimo-v2-flash-thinking", name="MiMo V2 Flash Thinking (Reasoning)", provider="xiaomi", context_length=262144),
+        ModelInfo(id="mimo-v2-omni", name="MiMo V2 Omni (Multimodal)", provider="xiaomi", context_length=262144),
+        ModelInfo(id="mimo-v2-pro", name="MiMo V2 Pro (Agent)", provider="xiaomi", context_length=262144),
     ]
 
     def __init__(self, api_key: str = ""):
@@ -26,7 +30,7 @@ class XiaomiProvider(BaseProvider):
 
     def _headers(self):
         return {
-            "Authorization": f"Bearer {self.api_key}",
+            "api-key": self.api_key,
             "Content-Type": "application/json",
         }
 
@@ -40,7 +44,8 @@ class XiaomiProvider(BaseProvider):
             "model": model,
             "messages": msgs,
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            "max_completion_tokens": max_tokens,
+            "top_p": 0.95,
             "stream": stream,
         }
 
@@ -92,7 +97,6 @@ class XiaomiProvider(BaseProvider):
                             yield delta["content"]
 
     async def list_models(self):
-        """Always return available models — key check happens at chat time."""
         return list(self.AVAILABLE_MODELS)
 
     async def is_available(self):

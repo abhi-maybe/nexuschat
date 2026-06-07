@@ -8,6 +8,12 @@
     <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#10a37f">
+    <script>
+        // Redirect to login BEFORE body renders if no token
+        if (!localStorage.getItem('nexuschat_token')) {
+            window.location.replace('/login');
+        }
+    </script>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 </head>

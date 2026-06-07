@@ -46,3 +46,4 @@ nexuschat.db
 node_modules/
 .vercel/
 .venv/
+.vercel

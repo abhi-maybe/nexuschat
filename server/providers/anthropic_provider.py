@@ -1,12 +1,15 @@
 """Anthropic Claude API provider."""
 
 import httpx
+import json
 from typing import AsyncGenerator
+
 from server.providers.base import BaseProvider, ChatMessage, ChatResponse, ModelInfo
 
 
 class AnthropicProvider(BaseProvider):
     """Anthropic Claude API provider."""
+
     name = "anthropic"
     display_name = "Anthropic (Claude)"
 
@@ -33,24 +36,26 @@ class AnthropicProvider(BaseProvider):
         if system_prompt:
             payload["system"] = system_prompt
 
-        async with httpx.AsyncClient(timeout=120) as client:
-            resp = await client.post(
-                f"{self.BASE_URL}/messages",
-                headers=self._headers(),
-                json=payload,
-            )
-            resp.raise_for_status()
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    f"{self.BASE_URL}/messages",
+                    headers=self._headers(),
+                    json=payload,
+                )
+                resp.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise ValueError("Invalid Anthropic API key")
             raise
-            data = resp.json()
-            return ChatResponse(
-                content=data["content"][0]["text"],
-                model=model,
-                tokens_used=data.get("usage", {}).get("input_tokens", 0) + data.get("usage", {}).get("output_tokens", 0),
-                provider=self.name,
-            )
+
+        data = resp.json()
+        return ChatResponse(
+            content=data["content"][0]["text"],
+            model=model,
+            tokens_used=data.get("usage", {}).get("input_tokens", 0) + data.get("usage", {}).get("output_tokens", 0),
+            provider=self.name,
+        )
 
     async def chat_stream(self, messages, model, system_prompt="", temperature=0.7, max_tokens=4096):
         msgs = [{"role": m.role, "content": m.content} for m in messages]
@@ -74,7 +79,6 @@ class AnthropicProvider(BaseProvider):
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
                     if line.startswith("data: "):
-                        import json
                         chunk = json.loads(line[6:])
                         if chunk.get("type") == "content_block_delta":
                             yield chunk["delta"].get("text", "")

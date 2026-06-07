@@ -35,8 +35,6 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """Application factory."""
-    setup_cors(app)
-
     app = FastAPI(
         docs_url="/api/docs",
         redoc_url="/api/redoc",
@@ -46,12 +44,13 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # CORS — must be applied after app is created
+    setup_cors(app)
+
     # Mount static files
-    # Serve CSS, JS, and images
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     # Templates
-    # Jinja2 template engine
     app.state.templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
     # Store references
@@ -76,8 +75,6 @@ def create_app() -> FastAPI:
     async def login_page():
         return FileResponse(str(TEMPLATES_DIR / "login.html"))
 
-
-    @app.get("/ping")
     @app.get("/version")
     async def version():
         return {"version": "1.0.0", "name": "NexusChat"}

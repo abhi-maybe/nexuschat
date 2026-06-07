@@ -1,4 +1,4 @@
-"""OpenAI API provider."""
+"""Xiaomi MiMo API provider (OpenAI-compatible)."""
 
 import httpx
 import json
@@ -7,14 +7,19 @@ from typing import AsyncGenerator
 from server.providers.base import BaseProvider, ChatMessage, ChatResponse, ModelInfo
 
 
-class OpenAIProvider(BaseProvider):
-    """OpenAI API provider."""
+class XiaomiProvider(BaseProvider):
+    """Xiaomi MiMo API provider."""
 
-    name = "openai"
-    display_name = "OpenAI"
+    name = "xiaomi"
+    display_name = "Xiaomi (MiMo)"
 
-    BASE_URL = "https://api.openai.com/v1"
+    BASE_URL = "https://api.xiaomi.com/v1"
     DEFAULT_TIMEOUT = 120
+
+    AVAILABLE_MODELS = [
+        ModelInfo(id="MiMo-7B-RL", name="MiMo 7B RL", provider="xiaomi", context_length=131072),
+        ModelInfo(id="MiMo-7B-SFT", name="MiMo 7B SFT", provider="xiaomi", context_length=131072),
+    ]
 
     def __init__(self, api_key: str = ""):
         self.api_key = api_key
@@ -50,9 +55,9 @@ class OpenAIProvider(BaseProvider):
                 resp.raise_for_status()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise ValueError("Invalid OpenAI API key")
+                raise ValueError("Invalid Xiaomi API key")
             if e.response.status_code == 429:
-                raise ValueError("OpenAI rate limit exceeded")
+                raise ValueError("Xiaomi rate limit exceeded")
             raise
 
         data = resp.json()
@@ -84,29 +89,9 @@ class OpenAIProvider(BaseProvider):
     async def list_models(self):
         if not self.api_key:
             return []
-        try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.get(f"{self.BASE_URL}/models", headers=self._headers())
-                resp.raise_for_status()
-                data = resp.json()
-                models = []
-                for m in data.get("data", []):
-                    if "gpt" in m["id"] or "o1" in m["id"] or "o3" in m["id"]:
-                        models.append(ModelInfo(
-                            id=m["id"],
-                            name=m["id"],
-                            provider=self.name,
-                        ))
-                return sorted(models, key=lambda x: x.id)
-        except Exception:
-            return []
+        return list(self.AVAILABLE_MODELS)
 
     async def is_available(self):
         if not self.api_key:
             return False
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(f"{self.BASE_URL}/models", headers=self._headers())
-                return resp.status_code == 200
-        except Exception:
-            return False
+        return True

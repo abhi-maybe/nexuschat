@@ -5,6 +5,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 
@@ -39,7 +40,9 @@ class ConversationUpdate(BaseModel):
 async def _get_or_create_conversation(db, user_id, conv_id, provider, model, system_prompt):
     if conv_id:
         result = await db.execute(
-            select(Conversation).where(Conversation.id == conv_id, Conversation.user_id == user_id)
+            select(Conversation)
+            .where(Conversation.id == conv_id, Conversation.user_id == user_id)
+            .options(selectinload(Conversation.messages))
         )
         conv = result.scalar_one_or_none()
         if conv:
@@ -64,7 +67,6 @@ async def _load_history(db, conversation_id, limit=50):
         .where(Message.conversation_id == conversation_id)
         .order_by(desc(Message.created_at))
         .limit(limit)
-        # Eager load messages to avoid N+1
     )
     messages = list(reversed(result.scalars().all()))
     return [ChatMessage(role=m.role, content=m.content) for m in messages]
@@ -87,16 +89,18 @@ async def send_message(
         registry.configure_provider("ollama", base_url=settings.ollama_base_url)
         registry.configure_provider("openai", api_key=settings.openai_api_key)
         registry.configure_provider("anthropic", api_key=settings.anthropic_api_key)
+        registry.configure_provider("deepseek", api_key=settings.deepseek_api_key)
+        registry.configure_provider("xiaomi", api_key=settings.xiaomi_api_key)
+        registry.configure_provider("groq", api_key=settings.groq_api_key)
 
     provider = registry.get_provider(req.provider)
-    logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
     if not provider:
         logger.error("Unknown provider requested: %s", req.provider)
-    if not provider:
         raise HTTPException(status_code=400, detail=f"Unknown provider: {req.provider}")
 
     # Get/create conversation
     conv = await _get_or_create_conversation(db, user.id, req.conversation_id, req.provider, req.model, req.system_prompt)
+    logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
 
     # Save user message
     user_msg = Message(conversation_id=conv.id, role="user", content=req.message, model=req.model)
@@ -111,7 +115,6 @@ async def send_message(
     history = await _load_history(db, conv.id)
 
     # Get system prompt
-    # Priority: request > conversation > user settings > empty
     system = req.system_prompt or conv.system_prompt or (settings.system_prompt if settings else "")
 
     await db.commit()
@@ -176,9 +179,10 @@ async def list_conversations(
     result = await db.execute(
         select(Conversation)
         .where(Conversation.user_id == user.id)
+        .options(selectinload(Conversation.messages))
         .order_by(desc(Conversation.updated_at))
     )
-    conversations = result.scalars().all()
+    conversations = result.scalars().unique().all()
     return {
         "conversations": [
             {
@@ -204,7 +208,9 @@ async def get_conversation(
 ):
     """Get a full conversation with all messages."""
     result = await db.execute(
-        select(Conversation).where(Conversation.id == conv_id, Conversation.user_id == user.id)
+        select(Conversation)
+        .where(Conversation.id == conv_id, Conversation.user_id == user.id)
+        .options(selectinload(Conversation.messages))
     )
     conv = result.scalar_one_or_none()
     if not conv:

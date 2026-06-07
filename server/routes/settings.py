@@ -17,6 +17,9 @@ router = APIRouter()
 class SettingsUpdate(BaseModel):
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
+    deepseek_api_key: str | None = None
+    xiaomi_api_key: str | None = None
+    groq_api_key: str | None = None
     ollama_base_url: str | None = None
     default_provider: str | None = None
     default_model: str | None = None
@@ -37,6 +40,9 @@ async def get_settings(user: User = Depends(get_current_user), db: AsyncSession 
     return {
         "openai_api_key": bool(settings.openai_api_key),
         "anthropic_api_key": bool(settings.anthropic_api_key),
+        "deepseek_api_key": bool(settings.deepseek_api_key),
+        "xiaomi_api_key": bool(settings.xiaomi_api_key),
+        "groq_api_key": bool(settings.groq_api_key),
         "ollama_base_url": settings.ollama_base_url,
         "default_provider": settings.default_provider,
         "default_model": settings.default_model,
@@ -59,7 +65,11 @@ async def update_settings(
 
     updates = body.model_dump(exclude_none=True)
     logger.info("Settings updated for user %d: %s", user.id, list(updates.keys()))
-    allowed_fields = {'openai_api_key', 'anthropic_api_key', 'ollama_base_url', 'default_provider', 'default_model', 'theme', 'system_prompt'}
+    allowed_fields = {
+        'openai_api_key', 'anthropic_api_key', 'deepseek_api_key',
+        'xiaomi_api_key', 'groq_api_key', 'ollama_base_url',
+        'default_provider', 'default_model', 'theme', 'system_prompt'
+    }
     for field, value in updates.items():
         if field in allowed_fields:
             setattr(settings, field, value)

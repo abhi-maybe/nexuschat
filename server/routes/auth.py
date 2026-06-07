@@ -1,7 +1,6 @@
 """Authentication routes."""
 
 from fastapi import APIRouter, Request, HTTPException, Depends
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,6 +39,8 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -75,7 +76,6 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
     if len(req.username) < 2:
         raise HTTPException(status_code=400, detail="Username must be at least 2 characters")
-        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
 
     user = User(username=req.username, password_hash=hash_password(req.password))
     db.add(user)

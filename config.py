@@ -12,9 +12,9 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Server
-    host: str = "0.0.0.0"  # bind to all interfaces
+    host: str = "0.0.0.0"
     port: int = 8080
-    secret_key: str = "change...n"
+    secret_key: str = "change-me-to-a-random-string"
     debug: bool = False
     log_level: str = "info"
 
@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # API Keys
     openai_api_key: str = ""
     anthropic_api_key: str = ""
+    deepseek_api_key: str = ""
+    xiaomi_api_key: str = ""
+    groq_api_key: str = ""
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
@@ -36,9 +39,8 @@ class Settings(BaseSettings):
     # Session
     session_lifetime_hours: int = 168  # 1 week
 
-    # noinspection PyMethodParameters
     class Config:
-        env_file = ".env"
+        env_file = str(BASE_DIR / ".env")
         env_file_encoding = "utf-8"
 
 

@@ -38,3 +38,10 @@ node_modules/
 .pytest_cache/
 .coverage
 htmlcov/
+venv/
+__pycache__/
+*.pyc
+.env
+nexuschat.db
+node_modules/
+.vercel/

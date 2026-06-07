@@ -4,10 +4,12 @@ from server.providers.base import BaseProvider
 from server.providers.ollama_provider import OllamaProvider
 from server.providers.openai_provider import OpenAIProvider
 from server.providers.anthropic_provider import AnthropicProvider
+from server.providers.deepseek_provider import DeepSeekProvider
+from server.providers.xiaomi_provider import XiaomiProvider
+from server.providers.groq_provider import GroqProvider
 
 
 class ProviderRegistry:
-    """Central registry for all AI providers."""
     """Central registry for all AI providers."""
 
     def __init__(self):
@@ -18,26 +20,38 @@ class ProviderRegistry:
         self._providers["ollama"] = OllamaProvider()
         self._providers["openai"] = OpenAIProvider()
         self._providers["anthropic"] = AnthropicProvider()
+        self._providers["deepseek"] = DeepSeekProvider()
+        self._providers["xiaomi"] = XiaomiProvider()
+        self._providers["groq"] = GroqProvider()
 
     def get_provider(self, name: str) -> BaseProvider | None:
         """Get a provider by name."""
         return self._providers.get(name)
 
     def get_all_providers(self) -> dict[str, BaseProvider]:
-        return self._providers
+        return dict(self._providers)
 
     def configure_provider(self, name: str, **kwargs):
-        """Update provider configuration (API keys, URLs)."""
+        """Update provider configuration (API keys, URLs).
+
+        Creates a new provider instance with updated config instead of
+        mutating the shared singleton, avoiding race conditions.
+        """
         provider = self._providers.get(name)
         if not provider:
             return
 
         if name == "ollama" and "base_url" in kwargs:
-            provider.base_url = kwargs["base_url"].rstrip("/")
-        elif name == "openai" and "api_key" in kwargs:
-            provider.api_key = kwargs["api_key"]
-        elif name == "anthropic" and "api_key" in kwargs:
-            provider.api_key = kwargs["api_key"]
+            new_url = kwargs["base_url"].rstrip("/")
+            if new_url != provider.base_url:
+                new_provider = OllamaProvider(base_url=new_url)
+                self._providers[name] = new_provider
+        elif name in ("openai", "anthropic", "deepseek", "xiaomi", "groq") and "api_key" in kwargs:
+            new_key = kwargs["api_key"]
+            if new_key != provider.api_key:
+                provider_class = type(provider)
+                new_provider = provider_class(api_key=new_key)
+                self._providers[name] = new_provider
 
     async def get_available_models(self) -> list[dict]:
         """Get models from all available providers."""

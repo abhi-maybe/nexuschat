@@ -13,7 +13,7 @@ class Base(DeclarativeBase):
 
 class User(Base):
     """User account model."""
-    """User account."""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -27,12 +27,16 @@ class User(Base):
 
 class UserSettings(Base):
     """Per-user settings and API keys."""
+
     __tablename__ = "user_settings"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     openai_api_key = Column(String(256), default="")
     anthropic_api_key = Column(String(256), default="")
+    deepseek_api_key = Column(String(256), default="")
+    xiaomi_api_key = Column(String(256), default="")
+    groq_api_key = Column(String(256), default="")
     ollama_base_url = Column(String(256), default="http://localhost:11434")
     default_provider = Column(String(32), default="ollama")
     default_model = Column(String(64), default="llama3.2")
@@ -44,7 +48,7 @@ class UserSettings(Base):
 
 class Conversation(Base):
     """Chat conversation model."""
-    """A chat conversation."""
+
     __tablename__ = "conversations"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -62,7 +66,7 @@ class Conversation(Base):
 
 class Message(Base):
     """Individual message in a conversation."""
-    """A single message in a conversation."""
+
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -71,7 +75,7 @@ class Message(Base):
     content = Column(Text, nullable=False)
     model = Column(String(64), default="")
     tokens_used = Column(Integer, default=0)
-    is_edited = Column(default=False)
+    is_edited = Column(Boolean, default=False)
     token_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

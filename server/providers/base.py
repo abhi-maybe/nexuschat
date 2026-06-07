@@ -30,15 +30,13 @@ class ModelInfo:
 
 
 class BaseProvider(ABC):
-    """Abstract base for all AI providers."""
-    """Base class all providers must implement."""
+    """Abstract base class all providers must implement."""
 
     name: str = "base"
     display_name: str = "Base Provider"
 
     @abstractmethod
     async def chat(
-        self,
         self,
         messages: list[ChatMessage],
         model: str,

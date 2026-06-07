@@ -3,18 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusChat - Login</title>
+    <title>NexusChat — Login</title>
+    <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#10a37f">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="login-body">
     <div class="login-container">
         <div class="login-card">
             <div class="login-logo">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                    <g stroke="#10a37f" stroke-width="1.8" stroke-linecap="round">
+                        <ellipse cx="12" cy="12" rx="10" ry="4"/>
+                        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/>
+                        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>
+                        <circle cx="12" cy="12" r="2" fill="#10a37f"/>
+                    </g>
                 </svg>
                 <h1>NexusChat</h1>
-                <p style="font-size: 13px; color: var(--text-muted);">Chat with AI models</p>
+                <p>Chat with AI models</p>
             </div>
 
             <div class="login-tabs">
@@ -25,11 +33,11 @@
             <form id="login-form" class="login-form">
                 <div class="form-group">
                     <label for="login-username">Username</label>
-                    <input type="text" id="login-username" autocomplete="username" required>
+                    <input type="text" id="login-username" autocomplete="username" required placeholder="Enter your username">
                 </div>
                 <div class="form-group">
                     <label for="login-password">Password</label>
-                    <input type="password" id="login-password" autocomplete="current-password" required>
+                    <input type="password" id="login-password" autocomplete="current-password" required placeholder="Enter your password">
                 </div>
                 <button type="submit" class="btn-primary btn-full">Sign In</button>
                 <p id="login-error" class="form-error hidden"></p>
@@ -38,15 +46,15 @@
             <form id="register-form" class="login-form hidden">
                 <div class="form-group">
                     <label for="reg-username">Username</label>
-                    <input type="text" id="reg-username" autocomplete="username" required>
+                    <input type="text" id="reg-username" autocomplete="username" required placeholder="Choose a username">
                 </div>
                 <div class="form-group">
                     <label for="reg-password">Password</label>
-                    <input type="password" id="reg-password" autocomplete="new-password" required minlength="4">
+                    <input type="password" id="reg-password" autocomplete="new-password" required minlength="4" placeholder="Choose a password">
                 </div>
                 <div class="form-group">
                     <label for="reg-password2">Confirm Password</label>
-                    <input type="password" id="reg-password2" autocomplete="new-password" required>
+                    <input type="password" id="reg-password2" autocomplete="new-password" required placeholder="Confirm your password">
                 </div>
                 <button type="submit" class="btn-primary btn-full">Create Account</button>
                 <p id="register-error" class="form-error hidden"></p>
@@ -55,83 +63,88 @@
     </div>
 
     <script>
-    // Check if already logged in
-    if (localStorage.getItem('nexuschat_token')) {
-        window.location.href = '/';
-    }
-
-    // Tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('login-form').classList.toggle('hidden', btn.dataset.tab !== 'login');
-            document.getElementById('register-form').classList.toggle('hidden', btn.dataset.tab !== 'register');
-        });
-    });
-
-    // Login
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const errEl = document.getElementById('login-error');
-        errEl.classList.add('hidden');
-        try {
-            const resp = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    username: document.getElementById('login-username').value,
-                    password: document.getElementById('login-password').value,
-                }),
-            });
-            if (!resp.ok) {
-                const data = await resp.json();
-                throw new Error(data.detail || 'Login failed');
-            }
-            const data = await resp.json();
-            localStorage.setItem('nexuschat_token', data.token);
-            localStorage.setItem('nexuschat_username', data.username);
+    (function () {
+        // Redirect if already logged in
+        if (localStorage.getItem('nexuschat_token')) {
             window.location.href = '/';
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.classList.remove('hidden');
-        }
-    });
-
-    // Register
-    document.getElementById('register-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const errEl = document.getElementById('register-error');
-        errEl.classList.add('hidden');
-        const pw = document.getElementById('reg-password').value;
-        const pw2 = document.getElementById('reg-password2').value;
-        if (pw !== pw2) {
-            errEl.textContent = 'Passwords do not match';
-            errEl.classList.remove('hidden');
             return;
         }
-        try {
-            const resp = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    username: document.getElementById('reg-username').value,
-                    password: pw,
-                }),
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.tab-btn').forEach(function (b) {
+                    b.classList.remove('active');
+                });
+                btn.classList.add('active');
+                document.getElementById('login-form').classList.toggle('hidden', btn.dataset.tab !== 'login');
+                document.getElementById('register-form').classList.toggle('hidden', btn.dataset.tab !== 'register');
             });
-            if (!resp.ok) {
-                const data = await resp.json();
-                throw new Error(data.detail || 'Registration failed');
+        });
+
+        // Login
+        document.getElementById('login-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var errEl = document.getElementById('login-error');
+            errEl.classList.add('hidden');
+            try {
+                var resp = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('login-username').value,
+                        password: document.getElementById('login-password').value,
+                    }),
+                });
+                if (!resp.ok) {
+                    var data = await resp.json();
+                    throw new Error(data.detail || 'Login failed');
+                }
+                var data = await resp.json();
+                localStorage.setItem('nexuschat_token', data.token);
+                localStorage.setItem('nexuschat_username', data.username || data.user?.username || '');
+                window.location.href = '/';
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.classList.remove('hidden');
             }
-            const data = await resp.json();
-            localStorage.setItem('nexuschat_token', data.token);
-            localStorage.setItem('nexuschat_username', data.username);
-            window.location.href = '/';
-        } catch (err) {
-            errEl.textContent = err.message;
-            errEl.classList.remove('hidden');
-        }
-    });
+        });
+
+        // Register
+        document.getElementById('register-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var errEl = document.getElementById('register-error');
+            errEl.classList.add('hidden');
+            var pw = document.getElementById('reg-password').value;
+            var pw2 = document.getElementById('reg-password2').value;
+            if (pw !== pw2) {
+                errEl.textContent = 'Passwords do not match';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            try {
+                var resp = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('reg-username').value,
+                        password: pw,
+                    }),
+                });
+                if (!resp.ok) {
+                    var data = await resp.json();
+                    throw new Error(data.detail || 'Registration failed');
+                }
+                var data = await resp.json();
+                localStorage.setItem('nexuschat_token', data.token);
+                localStorage.setItem('nexuschat_username', data.username || data.user?.username || '');
+                window.location.href = '/';
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.classList.remove('hidden');
+            }
+        });
+    })();
     </script>
 </body>
 </html>

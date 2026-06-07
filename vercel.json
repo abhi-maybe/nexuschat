@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "dest": "api/index.py"
     },
     {
       "src": "/api/(.*)",
@@ -17,6 +17,18 @@
     },
     {
       "src": "/login",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/ping",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/version",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/favicon.ico",
       "dest": "api/index.py"
     },
     {

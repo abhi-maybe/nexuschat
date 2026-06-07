@@ -45,3 +45,4 @@ __pycache__/
 nexuschat.db
 node_modules/
 .vercel/
+.venv/

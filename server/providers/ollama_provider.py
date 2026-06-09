@@ -39,9 +39,9 @@ class OllamaProvider(BaseProvider):
                 )
                 resp.raise_for_status()
         except httpx.ConnectError:
-            raise ConnectionError("Cannot connect to Ollama. Is it running?")
+            raise ValueError("Cannot connect to Ollama. Is it running?")
         except httpx.TimeoutException:
-            raise TimeoutError("Ollama request timed out")
+            raise ValueError("Ollama request timed out")
 
         data = resp.json()
         return ChatResponse(
@@ -58,23 +58,28 @@ class OllamaProvider(BaseProvider):
         for m in messages:
             msgs.append({"role": m.role, "content": m.content})
 
-        async with httpx.AsyncClient(timeout=300) as client:
-            async with client.stream(
-                "POST",
-                f"{self.base_url}/api/chat",
-                json={
-                    "model": model,
-                    "messages": msgs,
-                    "stream": True,
-                    "options": {"temperature": temperature, "num_predict": max_tokens},
-                },
-            ) as resp:
-                resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if line.strip():
-                        chunk = json.loads(line)
-                        if "message" in chunk and "content" in chunk["message"]:
-                            yield chunk["message"]["content"]
+        try:
+            async with httpx.AsyncClient(timeout=300) as client:
+                async with client.stream(
+                    "POST",
+                    f"{self.base_url}/api/chat",
+                    json={
+                        "model": model,
+                        "messages": msgs,
+                        "stream": True,
+                        "options": {"temperature": temperature, "num_predict": max_tokens},
+                    },
+                ) as resp:
+                    resp.raise_for_status()
+                    async for line in resp.aiter_lines():
+                        if line.strip():
+                            chunk = json.loads(line)
+                            if "message" in chunk and "content" in chunk["message"]:
+                                yield chunk["message"]["content"]
+        except httpx.ConnectError:
+            raise ValueError("Cannot connect to Ollama. Is it running?")
+        except httpx.ReadTimeout:
+            raise ValueError("Ollama request timed out")
 
     @staticmethod
     def _parse_parameter_size(param_size) -> int:

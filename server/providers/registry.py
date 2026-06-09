@@ -1,5 +1,7 @@
 """Provider registry - discovers and manages AI providers."""
 
+from __future__ import annotations
+
 import asyncio
 import time
 import logging

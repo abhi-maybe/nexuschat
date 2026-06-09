@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
 from server.routes.auth import get_current_user, get_db
 from server.database.models import User, UserSettings
@@ -15,17 +16,17 @@ router = APIRouter()
 
 
 class SettingsUpdate(BaseModel):
-    openai_api_key: str | None = None
-    anthropic_api_key: str | None = None
-    deepseek_api_key: str | None = None
-    xiaomi_api_key: str | None = None
-    groq_api_key: str | None = None
-    openrouter_api_key: str | None = None
-    ollama_base_url: str | None = None
-    default_provider: str | None = None
-    default_model: str | None = None
-    theme: str | None = None
-    system_prompt: str | None = None
+    openai_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
+    deepseek_api_key: Optional[str] = None
+    xiaomi_api_key: Optional[str] = None
+    groq_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
+    ollama_base_url: Optional[str] = None
+    default_provider: Optional[str] = None
+    default_model: Optional[str] = None
+    theme: Optional[str] = None
+    system_prompt: Optional[str] = None
 
 
 @router.get("/")

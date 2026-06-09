@@ -15,10 +15,7 @@ const API = {
 
     async get(url) {
         const resp = await fetch(url, { headers: this.headers() });
-        if (resp.status === 401) {
-            this.logout();
-            return null;
-        }
+        if (resp.status === 401) { this.logout(); return null; }
         if (!resp.ok) throw new Error(`GET ${url}: ${resp.status}`);
         return resp.json();
     },
@@ -29,10 +26,7 @@ const API = {
             headers: this.headers(),
             body: JSON.stringify(body),
         });
-        if (resp.status === 401) {
-            this.logout();
-            return null;
-        }
+        if (resp.status === 401) { this.logout(); return null; }
         if (!resp.ok) {
             const data = await resp.json().catch(() => ({}));
             throw new Error(data.detail || `POST ${url}: ${resp.status}`);
@@ -46,10 +40,7 @@ const API = {
             headers: this.headers(),
             body: JSON.stringify(body),
         });
-        if (resp.status === 401) {
-            this.logout();
-            return null;
-        }
+        if (resp.status === 401) { this.logout(); return null; }
         if (!resp.ok) {
             const data = await resp.json().catch(() => ({}));
             throw new Error(data.detail || `PUT ${url}: ${resp.status}`);
@@ -62,10 +53,7 @@ const API = {
             method: 'DELETE',
             headers: this.headers(),
         });
-        if (resp.status === 401) {
-            this.logout();
-            return null;
-        }
+        if (resp.status === 401) { this.logout(); return null; }
         if (!resp.ok) throw new Error(`DELETE ${url}: ${resp.status}`);
         return resp.json();
     },
@@ -76,19 +64,8 @@ const API = {
         window.location.href = '/login';
     },
 
-    /**
-     * Streaming POST request via SSE.
-     * Signature: stream(endpoint, body, onChunk, onError, onDone)
-     *
-     * Backend sends:
-     *   data: {"token": "text"}   -> calls onChunk(text, data)
-     *   data: {"error": "msg"}    -> calls onError(msg)
-     *   data: {"done": true, ...} -> calls onDone(data)
-     *   data: [DONE]              -> calls onDone({})
-     */
     async stream(endpoint, body, onChunk, onError, onDone) {
         const controller = new AbortController();
-
         try {
             const resp = await fetch(endpoint, {
                 method: 'POST',
@@ -97,11 +74,7 @@ const API = {
                 signal: controller.signal,
             });
 
-            if (resp.status === 401) {
-                this.logout();
-                return controller;
-            }
-
+            if (resp.status === 401) { this.logout(); return controller; }
             if (!resp.ok) {
                 const data = await resp.json().catch(() => ({}));
                 throw new Error(data.detail || `Stream error: ${resp.status}`);
@@ -124,10 +97,7 @@ const API = {
                     if (!trimmed || !trimmed.startsWith('data:')) continue;
 
                     const dataStr = trimmed.slice(5).trim();
-                    if (dataStr === '[DONE]') {
-                        onDone({});
-                        return controller;
-                    }
+                    if (dataStr === '[DONE]') { onDone({}); return controller; }
 
                     try {
                         const data = JSON.parse(dataStr);
@@ -136,23 +106,16 @@ const API = {
                         } else if (data.done || data.finish_reason) {
                             onDone(data);
                         } else if (data.token !== undefined) {
-                            // SSE format: {"token": "text"}
                             onChunk(data.token, data);
                         } else if (data.content !== undefined) {
-                            // Alternate format: {"content": "text"}
                             onChunk(data.content, data);
                         }
-                    } catch (e) {
-                        // Skip malformed JSON
-                    }
+                    } catch (e) { /* skip malformed JSON */ }
                 }
             }
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                onError(err.message);
-            }
+            if (err.name !== 'AbortError') onError(err.message);
         }
-
         return controller;
     },
 };
@@ -178,20 +141,13 @@ function setupMarkdown() {
         return `<pre><div class="code-header"><span>${validLang}</span><button onclick="copyCode('${id}')">Copy</button></div><code id="${id}" class="hljs language-${validLang}">${highlighted}</code></pre>`;
     };
 
-    marked.setOptions({
-        renderer,
-        breaks: true,
-        gfm: true,
-    });
+    marked.setOptions({ renderer, breaks: true, gfm: true });
 }
 
 function renderMarkdown(text) {
     if (!text) return '';
-    try {
-        return marked.parse(text);
-    } catch {
-        return Utils.escapeHtml(text);
-    }
+    try { return marked.parse(text); }
+    catch { return Utils.escapeHtml(text); }
 }
 
 
@@ -203,8 +159,7 @@ const state = {
     isStreaming: false,
     abortController: null,
     systemPrompt: '',
-    models: [],
-    providers: [],
+    allModels: [],
     settings: {},
 };
 
@@ -233,7 +188,6 @@ const els = {
 
     chatContainer: null,
     chatMessages: null,
-    welcomeScreen: null,
     chatInput: null,
     charCount: null,
     sendBtn: null,
@@ -292,11 +246,9 @@ async function init() {
     Keyboard.init();
     applyTheme();
     initBackground();
-    setupBgGridListeners();
 
     await Promise.all([loadConversations(), loadModels(), loadSettings()]);
 
-    // Display username
     const username = localStorage.getItem('nexuschat_username');
     const userEl = $('#user-name');
     if (userEl && username) {
@@ -319,29 +271,30 @@ function setupEventListeners() {
     els.stopBtn?.addEventListener('click', stopStreaming);
 
     // Provider change
-    els.providerSelect?.addEventListener('change', onProviderChange);
-    els.modelSelect?.addEventListener('change', () => {});
+    els.providerSelect?.addEventListener('change', () => loadModels());
 
     // Settings
     els.settingsBtn?.addEventListener('click', openSettings);
     els.closeSettings?.addEventListener('click', closeSettings);
-    els.settingsModal?.querySelector('.modal-backdrop')?.addEventListener('click', closeSettings);
     els.saveSettings?.addEventListener('click', saveSettingsHandler);
+
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', () => API.logout());
+
+    // Theme menu (delegated)
+    document.getElementById('theme-menu')?.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-theme-val]');
+        if (item) setTheme(item.getAttribute('data-theme-val'));
+    });
 
     // System prompt
     els.systemPromptBtn?.addEventListener('click', () => {
         els.systemPromptInput.value = state.systemPrompt;
-        els.systemPromptModal.classList.remove('hidden');
-    });
-    els.systemPromptModal?.querySelector('.modal-backdrop')?.addEventListener('click', () => {
-        els.systemPromptModal.classList.add('hidden');
-    });
-    els.systemPromptModal?.querySelector('.close-modal')?.addEventListener('click', () => {
-        els.systemPromptModal.classList.add('hidden');
+        document.getElementById('system-prompt-modal')?.showModal();
     });
     els.saveSystemPrompt?.addEventListener('click', () => {
         state.systemPrompt = els.systemPromptInput.value;
-        els.systemPromptModal.classList.add('hidden');
+        document.getElementById('system-prompt-modal')?.close();
         showToast('System prompt updated', 'success');
     });
 
@@ -355,9 +308,6 @@ function setupEventListeners() {
         }
     });
 
-    // Theme toggle
-    els.themeToggle?.addEventListener('click', toggleTheme);
-
     // Temperature slider
     const tempSlider = $('#setting-temperature');
     const tempValue = $('#temperature-value');
@@ -366,44 +316,39 @@ function setupEventListeners() {
             tempValue.textContent = parseFloat(tempSlider.value).toFixed(1);
         });
     }
+
+    // Background grid (single delegated listener)
+    setupBgGridListeners();
 }
 
 
 /* ============ Sidebar ============ */
 function toggleSidebar() {
-    els.sidebar?.classList.toggle('open');
-    els.sidebarOverlay?.classList.toggle('hidden', !els.sidebar?.classList.contains('open'));
+    const isOpen = els.sidebar?.classList.toggle('open');
+    if (els.sidebarOverlay) {
+        els.sidebarOverlay.style.display = isOpen ? 'block' : 'none';
+    }
 }
 
 function closeSidebar() {
     els.sidebar?.classList.remove('open');
-    els.sidebarOverlay?.classList.add('hidden');
+    if (els.sidebarOverlay) {
+        els.sidebarOverlay.style.display = 'none';
+    }
 }
 
 
 /* ============ Theme ============ */
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('nexuschat_theme', theme);
+    API.put('/api/settings/', { theme: theme }).catch(() => {});
+}
+window.setTheme = setTheme;
+
 function applyTheme() {
     const saved = localStorage.getItem('nexuschat_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
-    updateThemeIcon(saved);
-}
-
-function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('nexuschat_theme', next);
-    updateThemeIcon(next);
-
-    // Also save to backend
-    API.put('/api/settings/', { theme: next }).catch(() => {});
-}
-
-function updateThemeIcon(theme) {
-    const icon = els.themeToggle?.querySelector('.theme-icon');
-    if (icon) {
-        icon.textContent = theme === 'dark' ? '☀️' : '🌙';
-    }
 }
 
 
@@ -428,8 +373,7 @@ function renderConversations() {
     }
 
     els.conversationsList.innerHTML = state.conversations
-        .map(
-            (c) => `
+        .map((c) => `
         <div class="conv-item ${c.id === state.currentConversationId ? 'active' : ''}" data-id="${c.id}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -440,32 +384,30 @@ function renderConversations() {
                     <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
             </button>
-        </div>`
-        )
+        </div>`)
         .join('');
 
-    // Click handlers
-    els.conversationsList.querySelectorAll('.conv-item').forEach((el) => {
-        el.addEventListener('click', (e) => {
-            if (e.target.closest('.conv-delete')) return;
-            openConversation(parseInt(el.dataset.id));
-        });
-    });
-
-    els.conversationsList.querySelectorAll('.conv-delete').forEach((btn) => {
-        btn.addEventListener('click', async (e) => {
+    // Delegated click handler for conversation items
+    els.conversationsList.onclick = (e) => {
+        const deleteBtn = e.target.closest('.conv-delete');
+        if (deleteBtn) {
             e.stopPropagation();
-            const id = parseInt(btn.dataset.id);
-            if (confirm('Delete this conversation? This cannot be undone.')) {
-                await API.del(`/api/chat/conversations/${id}`);
-                if (state.currentConversationId === id) {
-                    state.currentConversationId = null;
-                    showWelcome();
-                }
-                await loadConversations();
-            }
-        });
-    });
+            handleDeleteConversation(parseInt(deleteBtn.dataset.id));
+            return;
+        }
+        const convItem = e.target.closest('.conv-item');
+        if (convItem) openConversation(parseInt(convItem.dataset.id));
+    };
+}
+
+async function handleDeleteConversation(id) {
+    if (!confirm('Delete this conversation? This cannot be undone.')) return;
+    await API.del(`/api/chat/conversations/${id}`);
+    if (state.currentConversationId === id) {
+        state.currentConversationId = null;
+        showWelcome();
+    }
+    await loadConversations();
 }
 
 async function openConversation(id) {
@@ -514,12 +456,12 @@ function showWelcome() {
     els.chatMessages.innerHTML = `
         <div class="welcome-screen">
             <div class="welcome-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
                     <g stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                        <ellipse cx="12" cy="12" rx="10" ry="4"/>
-                        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/>
-                        <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>
-                        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                        <ellipse cx="16" cy="16" rx="11" ry="4.5"/>
+                        <ellipse cx="16" cy="16" rx="11" ry="4.5" transform="rotate(60 16 16)"/>
+                        <ellipse cx="16" cy="16" rx="11" ry="4.5" transform="rotate(120 16 16)"/>
+                        <circle cx="16" cy="16" r="2.5" fill="currentColor"/>
                     </g>
                 </svg>
             </div>
@@ -562,8 +504,7 @@ function appendMessage(role, content, animate = true) {
     if (!animate) div.style.animation = 'none';
 
     const avatarText = role === 'user' ? 'U' : 'AI';
-    const rendered =
-        role === 'assistant' ? renderMarkdown(content) : `<p>${escapeHtml(content)}</p>`;
+    const rendered = role === 'assistant' ? renderMarkdown(content) : `<p>${escapeHtml(content)}</p>`;
 
     div.innerHTML = `
         <div class="message-avatar">${avatarText}</div>
@@ -595,14 +536,25 @@ function appendStreamingMessage() {
     return div;
 }
 
+// Throttled streaming update using requestAnimationFrame
+let _streamUpdatePending = false;
+let _streamContentBuffer = '';
+
 function updateStreamingMessage(content) {
-    const el = document.getElementById('streaming-message');
-    if (!el) return;
-    const contentEl = el.querySelector('.message-content');
-    contentEl.innerHTML =
-        renderMarkdown(content) +
-        '<div class="message-actions"><button onclick="copyMessageContent(this)">Copy</button></div>';
-    scrollToBottom();
+    _streamContentBuffer = content;
+    if (_streamUpdatePending) return;
+    _streamUpdatePending = true;
+
+    requestAnimationFrame(() => {
+        _streamUpdatePending = false;
+        const el = document.getElementById('streaming-message');
+        if (!el) return;
+        const contentEl = el.querySelector('.message-content');
+        contentEl.innerHTML =
+            renderMarkdown(_streamContentBuffer) +
+            '<div class="message-actions"><button onclick="copyMessageContent(this)">Copy</button></div>';
+        scrollToBottom();
+    });
 }
 
 function finalizeStreamingMessage(content) {
@@ -628,7 +580,6 @@ async function sendMessage() {
     const text = els.chatInput.value.trim();
     if (!text || state.isStreaming) return;
 
-    // Remove welcome screen
     const welcome = els.chatMessages.querySelector('.welcome-screen');
     if (welcome) welcome.remove();
 
@@ -647,11 +598,9 @@ async function sendMessage() {
     els.sendBtn.classList.add('hidden');
     els.stopBtn.classList.remove('hidden');
 
-    const streamMsg = appendStreamingMessage();
+    appendStreamingMessage();
     let fullContent = '';
 
-    // FIX: API.stream(endpoint, body, onChunk, onError, onDone)
-    // Previously the body was passed as a URL string — now it's a proper object.
     state.abortController = await API.stream(
         '/api/chat/send',
         {
@@ -662,7 +611,6 @@ async function sendMessage() {
             system_prompt: state.systemPrompt,
             stream: true,
         },
-        // onChunk
         (chunk, data) => {
             fullContent += chunk;
             if (data.conversation_id && !state.currentConversationId) {
@@ -670,13 +618,11 @@ async function sendMessage() {
             }
             updateStreamingMessage(fullContent);
         },
-        // onError
         (err) => {
             finalizeStreamingMessage(fullContent || `Error: ${err}`);
             finishStreaming();
             showToast(err, 'error');
         },
-        // onDone
         async (data) => {
             finalizeStreamingMessage(fullContent);
             state.currentMessages.push({ role: 'assistant', content: fullContent });
@@ -690,9 +636,7 @@ async function sendMessage() {
 }
 
 function stopStreaming() {
-    if (state.abortController) {
-        state.abortController.abort();
-    }
+    if (state.abortController) state.abortController.abort();
     finishStreaming();
 }
 
@@ -712,7 +656,6 @@ function onInputChange() {
 }
 
 function onInputKeydown(e) {
-    // Send on Enter (without Shift), newline on Shift+Enter
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
         e.preventDefault();
         sendMessage();
@@ -732,10 +675,6 @@ function updateCharCount() {
 
 
 /* ============ Models ============ */
-function onProviderChange() {
-    loadModels();
-}
-
 async function loadModels() {
     const provider = els.providerSelect?.value;
     if (!els.modelSelect) return;
@@ -744,25 +683,23 @@ async function loadModels() {
         const data = await API.get('/api/models/available');
         if (!data) return;
 
-        // API returns flat list — group by provider
         const allModels = data.models || [];
         state.allModels = allModels;
 
-        // Filter models for selected provider
         const models = allModels.filter(m => m.provider === provider);
 
         els.modelSelect.innerHTML = '';
         if (models.length === 0) {
             els.modelSelect.innerHTML = '<option value="">No models available</option>';
         } else {
-            models.forEach((m) => {
+            for (const m of models) {
                 const opt = document.createElement('option');
                 opt.value = m.id;
                 opt.textContent = m.name || m.id;
                 els.modelSelect.appendChild(opt);
-            });
+            }
         }
-    } catch (err) {
+    } catch {
         els.modelSelect.innerHTML = '<option value="">Failed to load models</option>';
     }
 }
@@ -770,11 +707,11 @@ async function loadModels() {
 
 /* ============ Settings ============ */
 function openSettings() {
-    els.settingsModal.classList.remove('hidden');
+    document.getElementById('settings-modal')?.showModal();
 }
 
 function closeSettings() {
-    els.settingsModal.classList.add('hidden');
+    document.getElementById('settings-modal')?.close();
 }
 
 async function loadSettings() {
@@ -783,7 +720,6 @@ async function loadSettings() {
         if (!data) return;
         state.settings = data;
 
-        // Populate form
         const ollamaUrl = $('#setting-ollama-url');
         const defaultProvider = $('#setting-default-provider');
         const systemPrompt = $('#setting-system-prompt');
@@ -800,30 +736,27 @@ async function loadSettings() {
             if (tempVal) tempVal.textContent = parseFloat(temperature.value).toFixed(1);
         }
 
-        // Populate API key fields (show placeholder only — don't fill actual keys)
-        const openaiKey = $('#setting-openai-key');
-        const anthropicKey = $('#setting-anthropic-key');
-        const deepseekKey = $('#setting-deepseek-key');
-        const groqKey = $('#setting-groq-key');
-        const xiaomiKey = $('#setting-xiaomi-key');
-        const openrouterKey = $('#setting-openrouter-key');
-        if (openaiKey && data.openai_api_key) openaiKey.placeholder = 'sk-...••••••••';
-        if (anthropicKey && data.anthropic_api_key) anthropicKey.placeholder = 'sk-ant-...••••••••';
-        if (deepseekKey && data.deepseek_api_key) deepseekKey.placeholder = 'sk-...••••••••';
-        if (groqKey && data.groq_api_key) groqKey.placeholder = 'gsk_...••••••••';
-        if (xiaomiKey && data.xiaomi_api_key) xiaomiKey.placeholder = 'sk-...••••••••';
-        if (openrouterKey && data.openrouter_api_key) openrouterKey.placeholder = 'sk-or-...••••••••';
+        // Show placeholder for configured keys
+        const keyFields = {
+            'setting-openai-key': data.openai_api_key,
+            'setting-anthropic-key': data.anthropic_api_key,
+            'setting-deepseek-key': data.deepseek_api_key,
+            'setting-groq-key': data.groq_api_key,
+            'setting-xiaomi-key': data.xiaomi_api_key,
+            'setting-openrouter-key': data.openrouter_api_key,
+        };
+        for (const [id, hasKey] of Object.entries(keyFields)) {
+            const el = document.getElementById(id);
+            if (el && hasKey) el.placeholder = '•••••••• (configured)';
+        }
 
         state.systemPrompt = data.system_prompt || '';
 
-        // Apply theme from settings
         if (data.theme) {
             document.documentElement.setAttribute('data-theme', data.theme);
             localStorage.setItem('nexuschat_theme', data.theme);
-            updateThemeIcon(data.theme);
         }
 
-        // Set provider
         if (els.providerSelect) {
             els.providerSelect.value = data.default_provider || 'ollama';
             await loadModels();
@@ -847,30 +780,22 @@ async function saveSettingsHandler() {
             default_model: els.modelSelect?.value,
             system_prompt: $('#setting-system-prompt')?.value,
             theme: $('#setting-theme')?.value,
-            temperature: parseFloat($('#setting-temperature')?.value || 0.7),
         };
 
         await API.put('/api/settings/', payload);
 
-        // Apply theme
         const newTheme = payload.theme || 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('nexuschat_theme', newTheme);
-        updateThemeIcon(newTheme);
+        setTheme(newTheme);
 
-        // Save background preference
         const activeBg = document.querySelector('#bg-grid .bg-option.active');
         const bgValue = activeBg?.dataset.value || 'none';
         localStorage.setItem('nexuschat_bg', bgValue);
 
         if (bgValue === 'custom') {
-            const customUrl = $('#setting-custom-bg-url')?.value || '';
-            const customOpacity = parseInt($('#setting-custom-bg-opacity')?.value || '15', 10);
-            localStorage.setItem('nexuschat_bg_custom_url', customUrl);
-            localStorage.setItem('nexuschat_bg_custom_opacity', customOpacity.toString());
+            localStorage.setItem('nexuschat_bg_custom_url', $('#setting-custom-bg-url')?.value || '');
+            localStorage.setItem('nexuschat_bg_custom_opacity', parseInt($('#setting-custom-bg-opacity')?.value || '15', 10).toString());
         }
 
-        // Update provider
         if (els.providerSelect) {
             els.providerSelect.value = payload.default_provider;
             await loadModels();
@@ -896,9 +821,7 @@ function applyBackground(bgName) {
 }
 
 function applyCustomBgVars(url, opacity) {
-    if (url) {
-        document.documentElement.style.setProperty('--custom-bg-url', `url("${url}")`);
-    }
+    if (url) document.documentElement.style.setProperty('--custom-bg-url', `url("${url}")`);
     document.documentElement.style.setProperty('--custom-bg-opacity', (opacity || 15) / 100);
 }
 
@@ -908,12 +831,8 @@ function initBackground() {
     const customOpacity = parseInt(localStorage.getItem('nexuschat_bg_custom_opacity') || '15', 10);
 
     applyBackground(saved);
+    if (saved === 'custom' && customUrl) applyCustomBgVars(customUrl, customOpacity);
 
-    if (saved === 'custom' && customUrl) {
-        applyCustomBgVars(customUrl, customOpacity);
-    }
-
-    // Update grid selection
     const grid = document.getElementById('bg-grid');
     if (grid) {
         grid.querySelectorAll('.bg-option').forEach(opt => {
@@ -921,17 +840,12 @@ function initBackground() {
         });
     }
 
-    // Show/hide custom fields
     const customFields = document.getElementById('custom-bg-fields');
-    if (customFields) {
-        customFields.classList.toggle('visible', saved === 'custom');
-    }
+    if (customFields) customFields.classList.toggle('visible', saved === 'custom');
 
-    // Populate custom URL input
     const urlInput = document.getElementById('setting-custom-bg-url');
     if (urlInput) urlInput.value = customUrl;
 
-    // Populate opacity slider
     const opacitySlider = document.getElementById('setting-custom-bg-opacity');
     const opacityVal = document.getElementById('custom-bg-opacity-value');
     if (opacitySlider) opacitySlider.value = customOpacity;
@@ -942,6 +856,7 @@ function setupBgGridListeners() {
     const grid = document.getElementById('bg-grid');
     if (!grid) return;
 
+    // Single delegated listener
     grid.addEventListener('click', (e) => {
         const option = e.target.closest('.bg-option');
         if (!option) return;
@@ -952,13 +867,9 @@ function setupBgGridListeners() {
         const value = option.dataset.value;
         applyBackground(value);
 
-        // Show/hide custom fields
         const customFields = document.getElementById('custom-bg-fields');
-        if (customFields) {
-            customFields.classList.toggle('visible', value === 'custom');
-        }
+        if (customFields) customFields.classList.toggle('visible', value === 'custom');
 
-        // Live preview for custom
         if (value === 'custom') {
             const url = document.getElementById('setting-custom-bg-url')?.value;
             const opacity = parseInt(document.getElementById('setting-custom-bg-opacity')?.value || '15', 10);

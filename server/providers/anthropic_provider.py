@@ -25,7 +25,30 @@ class AnthropicProvider(BaseProvider):
             "Content-Type": "application/json",
         }
 
+    @staticmethod
+    def _raise_for_status(resp: httpx.Response, provider_name: str) -> None:
+        code = resp.status_code
+        if code == 401:
+            raise ValueError(f"Invalid {provider_name} API key")
+        if code == 429:
+            raise ValueError(f"{provider_name} rate limit exceeded")
+        if code == 400:
+            try:
+                detail = resp.json().get("error", {}).get("message", "")
+            except Exception:
+                detail = resp.text
+            raise ValueError(f"{provider_name} request error: {detail}")
+        if code >= 500:
+            raise ValueError(f"{provider_name} server error (HTTP {code})")
+        resp.raise_for_status()
+
     async def chat(self, messages, model, system_prompt="", temperature=0.7, max_tokens=4096):
+        if not self.api_key:
+            raise ValueError(
+                "Anthropic API key not configured. "
+                "Add one in Settings \u2192 Providers \u2192 Anthropic (Claude)."
+            )
+
         msgs = [{"role": m.role, "content": m.content} for m in messages]
         payload = {
             "model": model,
@@ -43,11 +66,11 @@ class AnthropicProvider(BaseProvider):
                     headers=self._headers(),
                     json=payload,
                 )
-                resp.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:
-                raise ValueError("Invalid Anthropic API key")
-            raise
+                self._raise_for_status(resp, self.display_name)
+        except httpx.ConnectError:
+            raise ValueError("Cannot connect to Anthropic API")
+        except httpx.ReadTimeout:
+            raise ValueError("Anthropic API request timed out")
 
         data = resp.json()
         return ChatResponse(
@@ -58,6 +81,12 @@ class AnthropicProvider(BaseProvider):
         )
 
     async def chat_stream(self, messages, model, system_prompt="", temperature=0.7, max_tokens=4096):
+        if not self.api_key:
+            raise ValueError(
+                "Anthropic API key not configured. "
+                "Add one in Settings \u2192 Providers \u2192 Anthropic (Claude)."
+            )
+
         msgs = [{"role": m.role, "content": m.content} for m in messages]
         payload = {
             "model": model,
@@ -69,19 +98,24 @@ class AnthropicProvider(BaseProvider):
         if system_prompt:
             payload["system"] = system_prompt
 
-        async with httpx.AsyncClient(timeout=120) as client:
-            async with client.stream(
-                "POST",
-                f"{self.BASE_URL}/messages",
-                headers=self._headers(),
-                json=payload,
-            ) as resp:
-                resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if line.startswith("data: "):
-                        chunk = json.loads(line[6:])
-                        if chunk.get("type") == "content_block_delta":
-                            yield chunk["delta"].get("text", "")
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                async with client.stream(
+                    "POST",
+                    f"{self.BASE_URL}/messages",
+                    headers=self._headers(),
+                    json=payload,
+                ) as resp:
+                    self._raise_for_status(resp, self.display_name)
+                    async for line in resp.aiter_lines():
+                        if line.startswith("data: "):
+                            chunk = json.loads(line[6:])
+                            if chunk.get("type") == "content_block_delta":
+                                yield chunk["delta"].get("text", "")
+        except httpx.ConnectError:
+            raise ValueError("Cannot connect to Anthropic API")
+        except httpx.ReadTimeout:
+            raise ValueError("Anthropic API request timed out")
 
     async def list_models(self) -> list[ModelInfo]:
         return [

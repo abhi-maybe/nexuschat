@@ -9,6 +9,7 @@ from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
+from typing import Optional
 
 from server.routes.auth import get_current_user
 from server.routes.auth import get_db
@@ -23,7 +24,7 @@ router = APIRouter()
 
 
 class ChatRequest(BaseModel):
-    conversation_id: int | None = None
+    conversation_id: Optional[int] = None
     message: str
     model: str = "llama3.2"
     provider: str = "ollama"
@@ -31,12 +32,12 @@ class ChatRequest(BaseModel):
     temperature: float = 0.7
     max_tokens: int = 4096
     stream: bool = True
-    parent_id: int | None = None
+    parent_id: Optional[int] = None
 
 
 class ConversationUpdate(BaseModel):
-    title: str | None = None
-    system_prompt: str | None = None
+    title: Optional[str] = None
+    system_prompt: Optional[str] = None
 
 
 async def _get_or_create_conversation(db, user_id, conv_id, provider, model, system_prompt):
@@ -64,13 +65,14 @@ async def _get_or_create_conversation(db, user_id, conv_id, provider, model, sys
 
 
 async def _load_history(db, conversation_id, limit=50):
+    from sqlalchemy import asc
     result = await db.execute(
         select(Message)
         .where(Message.conversation_id == conversation_id)
-        .order_by(desc(Message.created_at))
+        .order_by(asc(Message.created_at))
         .limit(limit)
     )
-    messages = list(reversed(result.scalars().all()))
+    messages = result.scalars().all()
     return [ChatMessage(role=m.role, content=m.content) for m in messages]
 
 
@@ -118,7 +120,10 @@ async def send_message(
         if msg_count == 0:
             conv.title = generate_title(req.message)
 
-    # Load conversation history
+    # Flush so user message is visible to subsequent queries
+    await db.flush()
+
+    # Load conversation history (now includes the just-added user message)
     history = await _load_history(db, conv.id)
 
     # Get system prompt

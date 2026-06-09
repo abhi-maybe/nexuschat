@@ -1,5 +1,7 @@
 """Shared base class for OpenAI-compatible API providers."""
 
+from __future__ import annotations
+
 import json
 import logging
 from typing import AsyncGenerator
@@ -163,8 +165,9 @@ class OpenAICompatibleProvider(BaseProvider):
                         try:
                             chunk = json.loads(data_str)
                             delta = chunk["choices"][0].get("delta", {})
-                            if "content" in delta:
-                                yield delta["content"]
+                            content = delta.get("content")
+                            if content:
+                                yield content
                         except (json.JSONDecodeError, KeyError, IndexError):
                             continue
         except httpx.ConnectError:

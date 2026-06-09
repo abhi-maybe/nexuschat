@@ -5,59 +5,47 @@
 const Keyboard = {
     init() {
         document.addEventListener('keydown', (e) => {
-            // Don't handle shortcuts when in input fields (except Escape)
-            const isInput = this.isInputFocused();
-
-            // Ctrl/Cmd + Enter — send message
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                if (typeof sendMessage === 'function') sendMessage();
-                return;
-            }
-
-            // Ctrl/Cmd + N — new chat
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                e.preventDefault();
-                if (typeof startNewChat === 'function') startNewChat();
-                return;
-            }
-
-            // Ctrl/Cmd + B — toggle sidebar
-            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-                e.preventDefault();
-                if (typeof toggleSidebar === 'function') toggleSidebar();
-                return;
-            }
-
-            // Ctrl/Cmd + Shift + S — open settings
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
-                e.preventDefault();
-                const settingsModal = document.getElementById('settings-modal');
-                if (settingsModal) settingsModal.classList.toggle('hidden');
-                return;
-            }
-
-            // Escape — close modals
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal:not(.hidden)').forEach((m) => {
-                    m.classList.add('hidden');
-                });
-                return;
-            }
-
-            // / — focus chat input (when not in an input)
-            if (e.key === '/' && !isInput) {
+            // Ctrl+Enter — Send message
+            if (e.ctrlKey && e.key === 'Enter') {
                 e.preventDefault();
                 const chatInput = document.getElementById('chat-input');
-                if (chatInput) chatInput.focus();
+                if (chatInput && chatInput.value.trim()) {
+                    sendMessage();
+                }
+            }
+
+            // Ctrl+N — New chat
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                startNewChat();
+            }
+
+            // Ctrl+B — Toggle sidebar
+            if (e.ctrlKey && e.key === 'b') {
+                e.preventDefault();
+                toggleSidebar();
+            }
+
+            // Ctrl+Shift+S — Open settings
+            if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+                e.preventDefault();
+                document.getElementById('settings-modal')?.showModal();
+            }
+
+            // Escape — Close modals
+            if (e.key === 'Escape') {
+                document.getElementById('settings-modal')?.close();
+                document.getElementById('system-prompt-modal')?.close();
+            }
+
+            // / — Focus input
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+                const active = document.activeElement;
+                if (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && active.tagName !== 'SELECT') {
+                    e.preventDefault();
+                    document.getElementById('chat-input')?.focus();
+                }
             }
         });
-    },
-
-    isInputFocused() {
-        const tag = document.activeElement?.tagName?.toLowerCase();
-        return tag === 'input' || tag === 'textarea' || tag === 'select';
-    },
+    }
 };
-
-window.Keyboard = Keyboard;

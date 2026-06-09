@@ -5,7 +5,7 @@ import httpx
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
@@ -45,7 +45,6 @@ async def _get_or_create_conversation(db, user_id, conv_id, provider, model, sys
         result = await db.execute(
             select(Conversation)
             .where(Conversation.id == conv_id, Conversation.user_id == user_id)
-            .options(selectinload(Conversation.messages))
         )
         conv = result.scalar_one_or_none()
         if conv:
@@ -87,13 +86,8 @@ async def send_message(
     registry = request.app.state.providers
 
     # Load user settings
-    try:
-        result = await db.execute(select(UserSettings).where(UserSettings.user_id == user.id))
-        settings = result.scalar_one_or_none()
-    except Exception as e:
-        logger.error("Failed to load user settings: %s", e)
-        settings = None
-
+    result = await db.execute(select(UserSettings).where(UserSettings.user_id == user.id))
+    settings = result.scalar_one_or_none()
     if settings:
         registry.configure_provider("ollama", base_url=settings.ollama_base_url)
         registry.configure_provider("openai", api_key=settings.openai_api_key)
@@ -109,38 +103,34 @@ async def send_message(
         raise HTTPException(status_code=400, detail=f"Unknown provider: {req.provider}")
 
     # Get/create conversation
-    try:
-        conv = await _get_or_create_conversation(db, user.id, req.conversation_id, req.provider, req.model, req.system_prompt)
-        logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
+    conv = await _get_or_create_conversation(db, user.id, req.conversation_id, req.provider, req.model, req.system_prompt)
+    logger.info("Chat request: provider=%s model=%s conv=%s", req.provider, req.model, conv.id)
 
-        # Save user message
-        user_msg = Message(conversation_id=conv.id, role="user", content=req.message, model=req.model, parent_id=req.parent_id)
-        db.add(user_msg)
+    # Save user message
+    user_msg = Message(conversation_id=conv.id, role="user", content=req.message, model=req.model, parent_id=req.parent_id)
+    db.add(user_msg)
 
-        # Update title if first message
-        is_new = not req.conversation_id
-        if is_new:
+    # Update title if first message
+    if not req.conversation_id:
+        conv.title = generate_title(req.message)
+    else:
+        # Check if conversation has any prior messages (lightweight count)
+        msg_count_result = await db.execute(
+            select(func.count()).where(Message.conversation_id == conv.id)
+        )
+        if msg_count_result.scalar() <= 1:
             conv.title = generate_title(req.message)
-        else:
-            msg_count = len(conv.messages) if conv.messages else 0
-            if msg_count == 0:
-                conv.title = generate_title(req.message)
 
-        # Flush so user message is visible to subsequent queries
-        await db.flush()
+    # Flush so user message is visible to subsequent queries
+    await db.flush()
 
-        # Load conversation history (now includes the just-added user message)
-        history = await _load_history(db, conv.id)
+    # Load conversation history (now includes the just-added user message)
+    history = await _load_history(db, conv.id)
 
-        # Get system prompt
-        system = req.system_prompt or conv.system_prompt or (settings.system_prompt if settings else "")
+    # Get system prompt
+    system = req.system_prompt or conv.system_prompt or (settings.system_prompt if settings else "")
 
-        await db.commit()
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception("Chat DB error: %s", e)
-        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    await db.commit()
 
     if req.stream:
         async def stream_response():
@@ -233,14 +223,26 @@ async def list_conversations(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all conversations for the current user."""
+    """List all conversations for the current user.
+
+    Uses a subquery to count messages instead of eagerly loading all messages.
+    """
+    # Subquery for message count
+    msg_count = (
+        select(func.count())
+        .where(Message.conversation_id == Conversation.id)
+        .correlate(Conversation)
+        .scalar_subquery()
+        .label("message_count")
+    )
+
     result = await db.execute(
-        select(Conversation)
+        select(Conversation, msg_count)
         .where(Conversation.user_id == user.id)
-        .options(selectinload(Conversation.messages))
         .order_by(desc(Conversation.updated_at))
     )
-    conversations = result.scalars().unique().all()
+    rows = result.all()
+
     return {
         "conversations": [
             {
@@ -250,9 +252,9 @@ async def list_conversations(
                 "model": c.model,
                 "created_at": c.created_at.isoformat() if c.created_at else None,
                 "updated_at": c.updated_at.isoformat() if c.updated_at else None,
-                "message_count": len(c.messages) if c.messages else 0,
+                "message_count": count,
             }
-            for c in conversations
+            for c, count in rows
         ]
     }
 
@@ -302,9 +304,7 @@ async def update_conversation(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Conversation).where(Conversation.id == conv_id, Conversation.user_id == user.id)
-    )
+    result = await db.execute(select(Conversation).where(Conversation.id == conv_id, Conversation.user_id == user.id))
     conv = result.scalar_one_or_none()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -325,9 +325,7 @@ async def delete_conversation(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Conversation).where(Conversation.id == conv_id, Conversation.user_id == user.id)
-    )
+    result = await db.execute(select(Conversation).where(Conversation.id == conv_id, Conversation.user_id == user.id))
     conv = result.scalar_one_or_none()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")

@@ -64,58 +64,61 @@ const API = {
         window.location.href = '/login';
     },
 
-    async stream(endpoint, body, onChunk, onError, onDone) {
+    stream(endpoint, body, onChunk, onError, onDone) {
         const controller = new AbortController();
-        try {
-            const resp = await fetch(endpoint, {
-                method: 'POST',
-                headers: this.headers(),
-                body: JSON.stringify(body),
-                signal: controller.signal,
-            });
+        (async () => {
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: this.headers(),
+                    body: JSON.stringify(body),
+                    signal: controller.signal,
+                });
 
-            if (resp.status === 401) { this.logout(); return controller; }
-            if (!resp.ok) {
-                const data = await resp.json().catch(() => ({}));
-                throw new Error(data.detail || `Stream error: ${resp.status}`);
-            }
-
-            const reader = resp.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    const trimmed = line.trim();
-                    if (!trimmed || !trimmed.startsWith('data:')) continue;
-
-                    const dataStr = trimmed.slice(5).trim();
-                    if (dataStr === '[DONE]') { onDone({}); return controller; }
-
-                    try {
-                        const data = JSON.parse(dataStr);
-                        if (data.error) {
-                            onError(data.error);
-                        } else if (data.done || data.finish_reason) {
-                            onDone(data);
-                        } else if (data.token !== undefined) {
-                            onChunk(data.token, data);
-                        } else if (data.content !== undefined) {
-                            onChunk(data.content, data);
-                        }
-                    } catch (e) { /* skip malformed JSON */ }
+                if (resp.status === 401) { this.logout(); return; }
+                if (!resp.ok) {
+                    const data = await resp.json().catch(() => ({}));
+                    throw new Error(data.detail || `Stream error: ${resp.status}`);
                 }
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed || !trimmed.startsWith('data:')) continue;
+
+                        const dataStr = trimmed.slice(5).trim();
+                        if (dataStr === '[DONE]') { onDone({}); return; }
+
+                        try {
+                            const data = JSON.parse(dataStr);
+                            if (data.error) {
+                                onError(data.error);
+                            } else if (data.done || data.finish_reason) {
+                                onDone(data);
+                            } else if (data.token !== undefined) {
+                                onChunk(data.token, data);
+                            } else if (data.content !== undefined) {
+                                onChunk(data.content, data);
+                            }
+                        } catch (e) { /* skip malformed JSON */ }
+                    }
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') onError(err.message);
             }
-        } catch (err) {
-            if (err.name !== 'AbortError') onError(err.message);
-        }
+        })();
+        // Return controller immediately so caller can abort
         return controller;
     },
 };
@@ -160,6 +163,7 @@ const state = {
     abortController: null,
     systemPrompt: '',
     allModels: [],
+    modelsLoaded: false,
     settings: {},
 };
 
@@ -192,8 +196,6 @@ const els = {
     charCount: null,
     sendBtn: null,
     stopBtn: null,
-
-    themeToggle: null,
 };
 
 function cacheDom() {
@@ -220,8 +222,6 @@ function cacheDom() {
     els.charCount = $('#char-count');
     els.sendBtn = $('#send-btn');
     els.stopBtn = $('#stop-btn');
-
-    els.themeToggle = $('#theme-toggle');
 }
 
 
@@ -245,9 +245,9 @@ async function init() {
     setupEventListeners();
     Keyboard.init();
     applyTheme();
-    initBackground();
 
-    await Promise.all([loadConversations(), loadModels(), loadSettings()]);
+    // Load conversations + settings in parallel (skip models — lazy load)
+    await Promise.all([loadConversations(), loadSettings()]);
 
     const username = localStorage.getItem('nexuschat_username');
     const userEl = $('#user-name');
@@ -270,7 +270,7 @@ function setupEventListeners() {
     els.sendBtn?.addEventListener('click', sendMessage);
     els.stopBtn?.addEventListener('click', stopStreaming);
 
-    // Provider change
+    // Provider change — lazy load models for that provider
     els.providerSelect?.addEventListener('change', () => loadModels());
 
     // Settings
@@ -316,9 +316,6 @@ function setupEventListeners() {
             tempValue.textContent = parseFloat(tempSlider.value).toFixed(1);
         });
     }
-
-    // Background grid (single delegated listener)
-    setupBgGridListeners();
 }
 
 
@@ -421,7 +418,8 @@ async function openConversation(id) {
 
         if (data.provider && els.providerSelect) {
             els.providerSelect.value = data.provider;
-            await loadModels();
+            // Only load models if not already cached
+            if (!state.modelsLoaded) await loadModels();
         }
         if (data.model && els.modelSelect) {
             els.modelSelect.value = data.model;
@@ -450,7 +448,13 @@ function startNewChat() {
 }
 
 
-/* ============ Messages ============ */
+/* ============ Messages — Telegram Style ============ */
+function formatTime(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 function showWelcome() {
     if (!els.chatMessages) return;
     els.chatMessages.innerHTML = `
@@ -492,48 +496,47 @@ function showWelcome() {
 function renderMessages() {
     els.chatMessages.innerHTML = '';
     for (const msg of state.currentMessages) {
-        appendMessage(msg.role, msg.content, false);
+        appendMessage(msg.role, msg.content, false, msg.created_at);
     }
     if (state.currentMessages.length === 0) showWelcome();
     scrollToBottom();
 }
 
-function appendMessage(role, content, animate = true) {
-    const div = document.createElement('div');
-    div.className = `message ${role}`;
-    if (!animate) div.style.animation = 'none';
+function appendMessage(role, content, animate = true, timestamp) {
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+    if (!animate) row.style.animation = 'none';
 
-    const avatarText = role === 'user' ? 'U' : 'AI';
     const rendered = role === 'assistant' ? renderMarkdown(content) : `<p>${escapeHtml(content)}</p>`;
+    const time = formatTime(timestamp) || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    div.innerHTML = `
-        <div class="message-avatar">${avatarText}</div>
-        <div class="message-content">
+    row.innerHTML = `
+        <div class="msg-bubble">
             ${rendered}
-            <div class="message-actions">
-                <button onclick="copyMessageContent(this)">Copy</button>
+            <div class="msg-time">${time}</div>
+            <div class="msg-actions">
+                <button onclick="copyMsgContent(this)">Copy</button>
             </div>
         </div>
     `;
 
-    els.chatMessages.appendChild(div);
+    els.chatMessages.appendChild(row);
     scrollToBottom();
-    return div;
+    return row;
 }
 
 function appendStreamingMessage() {
-    const div = document.createElement('div');
-    div.className = 'message assistant';
-    div.id = 'streaming-message';
-    div.innerHTML = `
-        <div class="message-avatar">AI</div>
-        <div class="message-content">
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    row.id = 'streaming-message';
+    row.innerHTML = `
+        <div class="msg-bubble">
             <div class="typing-indicator"><span></span><span></span><span></span></div>
         </div>
     `;
-    els.chatMessages.appendChild(div);
+    els.chatMessages.appendChild(row);
     scrollToBottom();
-    return div;
+    return row;
 }
 
 // Throttled streaming update using requestAnimationFrame
@@ -549,10 +552,12 @@ function updateStreamingMessage(content) {
         _streamUpdatePending = false;
         const el = document.getElementById('streaming-message');
         if (!el) return;
-        const contentEl = el.querySelector('.message-content');
-        contentEl.innerHTML =
+        const bubble = el.querySelector('.msg-bubble');
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        bubble.innerHTML =
             renderMarkdown(_streamContentBuffer) +
-            '<div class="message-actions"><button onclick="copyMessageContent(this)">Copy</button></div>';
+            `<div class="msg-time">${time}</div>` +
+            '<div class="msg-actions"><button onclick="copyMsgContent(this)">Copy</button></div>';
         scrollToBottom();
     });
 }
@@ -561,18 +566,20 @@ function finalizeStreamingMessage(content) {
     const el = document.getElementById('streaming-message');
     if (!el) return;
     el.removeAttribute('id');
-    const contentEl = el.querySelector('.message-content');
-    contentEl.innerHTML =
+    const bubble = el.querySelector('.msg-bubble');
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    bubble.innerHTML =
         renderMarkdown(content) +
-        '<div class="message-actions"><button onclick="copyMessageContent(this)">Copy</button></div>';
+        `<div class="msg-time">${time}</div>` +
+        '<div class="msg-actions"><button onclick="copyMsgContent(this)">Copy</button></div>';
 }
 
-function copyMessageContent(btn) {
-    const content = btn.closest('.message-content');
-    const text = content.textContent.replace('Copy', '').replace('Copied!', '').trim();
+function copyMsgContent(btn) {
+    const bubble = btn.closest('.msg-bubble');
+    const text = bubble.textContent.replace(/Copy|Copied!/g, '').trim();
     Utils.copyToClipboard(text, btn);
 }
-window.copyMessageContent = copyMessageContent;
+window.copyMsgContent = copyMsgContent;
 
 
 /* ============ Send Message / Streaming ============ */
@@ -601,7 +608,8 @@ async function sendMessage() {
     appendStreamingMessage();
     let fullContent = '';
 
-    state.abortController = await API.stream(
+    // Store controller IMMEDIATELY (API.stream returns it synchronously now)
+    state.abortController = API.stream(
         '/api/chat/send',
         {
             conversation_id: state.currentConversationId,
@@ -685,6 +693,7 @@ async function loadModels() {
 
         const allModels = data.models || [];
         state.allModels = allModels;
+        state.modelsLoaded = true;
 
         const models = allModels.filter(m => m.provider === provider);
 
@@ -759,6 +768,7 @@ async function loadSettings() {
 
         if (els.providerSelect) {
             els.providerSelect.value = data.default_provider || 'ollama';
+            // Load models lazily — only when settings are loaded
             await loadModels();
         }
     } catch (err) {
@@ -787,15 +797,6 @@ async function saveSettingsHandler() {
         const newTheme = payload.theme || 'dark';
         setTheme(newTheme);
 
-        const activeBg = document.querySelector('#bg-grid .bg-option.active');
-        const bgValue = activeBg?.dataset.value || 'none';
-        localStorage.setItem('nexuschat_bg', bgValue);
-
-        if (bgValue === 'custom') {
-            localStorage.setItem('nexuschat_bg_custom_url', $('#setting-custom-bg-url')?.value || '');
-            localStorage.setItem('nexuschat_bg_custom_opacity', parseInt($('#setting-custom-bg-opacity')?.value || '15', 10).toString());
-        }
-
         if (els.providerSelect) {
             els.providerSelect.value = payload.default_provider;
             await loadModels();
@@ -807,95 +808,6 @@ async function saveSettingsHandler() {
         showToast('Settings saved');
     } catch (err) {
         showToast('Failed to save settings: ' + err.message, 'error');
-    }
-}
-
-
-/* ============ Background Preset ============ */
-function applyBackground(bgName) {
-    if (!bgName || bgName === 'none') {
-        document.documentElement.removeAttribute('data-bg');
-    } else {
-        document.documentElement.setAttribute('data-bg', bgName);
-    }
-}
-
-function applyCustomBgVars(url, opacity) {
-    if (url) document.documentElement.style.setProperty('--custom-bg-url', `url("${url}")`);
-    document.documentElement.style.setProperty('--custom-bg-opacity', (opacity || 15) / 100);
-}
-
-function initBackground() {
-    const saved = localStorage.getItem('nexuschat_bg') || 'none';
-    const customUrl = localStorage.getItem('nexuschat_bg_custom_url') || '';
-    const customOpacity = parseInt(localStorage.getItem('nexuschat_bg_custom_opacity') || '15', 10);
-
-    applyBackground(saved);
-    if (saved === 'custom' && customUrl) applyCustomBgVars(customUrl, customOpacity);
-
-    const grid = document.getElementById('bg-grid');
-    if (grid) {
-        grid.querySelectorAll('.bg-option').forEach(opt => {
-            opt.classList.toggle('active', opt.dataset.value === saved);
-        });
-    }
-
-    const customFields = document.getElementById('custom-bg-fields');
-    if (customFields) customFields.classList.toggle('visible', saved === 'custom');
-
-    const urlInput = document.getElementById('setting-custom-bg-url');
-    if (urlInput) urlInput.value = customUrl;
-
-    const opacitySlider = document.getElementById('setting-custom-bg-opacity');
-    const opacityVal = document.getElementById('custom-bg-opacity-value');
-    if (opacitySlider) opacitySlider.value = customOpacity;
-    if (opacityVal) opacityVal.textContent = customOpacity + '%';
-}
-
-function setupBgGridListeners() {
-    const grid = document.getElementById('bg-grid');
-    if (!grid) return;
-
-    // Single delegated listener
-    grid.addEventListener('click', (e) => {
-        const option = e.target.closest('.bg-option');
-        if (!option) return;
-
-        grid.querySelectorAll('.bg-option').forEach(o => o.classList.remove('active'));
-        option.classList.add('active');
-
-        const value = option.dataset.value;
-        applyBackground(value);
-
-        const customFields = document.getElementById('custom-bg-fields');
-        if (customFields) customFields.classList.toggle('visible', value === 'custom');
-
-        if (value === 'custom') {
-            const url = document.getElementById('setting-custom-bg-url')?.value;
-            const opacity = parseInt(document.getElementById('setting-custom-bg-opacity')?.value || '15', 10);
-            if (url) applyCustomBgVars(url, opacity);
-        }
-    });
-
-    // Custom URL live preview
-    const urlInput = document.getElementById('setting-custom-bg-url');
-    if (urlInput) {
-        urlInput.addEventListener('input', () => {
-            const opacity = parseInt(document.getElementById('setting-custom-bg-opacity')?.value || '15', 10);
-            applyCustomBgVars(urlInput.value, opacity);
-        });
-    }
-
-    // Opacity slider
-    const opacitySlider = document.getElementById('setting-custom-bg-opacity');
-    const opacityVal = document.getElementById('custom-bg-opacity-value');
-    if (opacitySlider) {
-        opacitySlider.addEventListener('input', () => {
-            const v = opacitySlider.value;
-            if (opacityVal) opacityVal.textContent = v + '%';
-            const url = document.getElementById('setting-custom-bg-url')?.value;
-            if (url) applyCustomBgVars(url, parseInt(v, 10));
-        });
     }
 }
 
